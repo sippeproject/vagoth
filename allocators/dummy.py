@@ -5,5 +5,7 @@ class DummyAllocator(object):
         #self.node_registry = global_config.get_node_registry()
         #self.vm_registry = global_config.get_vm_registry()
     def allocate(self, vm, hint=None):
+        if hint:
+            return hint
         return self.config.get('node', None)
         

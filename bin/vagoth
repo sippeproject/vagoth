@@ -1,41 +1,56 @@
 #!/usr/bin/python
 
 from vagoth.manager import get_manager
+from vagoth.transaction import Transaction
 import argparse
 from vagoth.drivers import geats
-from pprint import pprint
+import json
+import getpass
+
+def pprint(dictionary):
+    print(json.dumps(dictionary, indent=2))
 
 manager = get_manager()
 
-p_global = argparse.ArgumentParser(add_help=False)
+p_global = argparse.ArgumentParser(add_help=True,
+    formatter_class=argparse.RawTextHelpFormatter)
 p_global.add_argument("--verbose", action='store_true')
-p_global_subs = p_global.add_subparsers(title="subcommands", description="valid subcommands")
+p_global_subs = p_global.add_subparsers(title="subcommands", description="""Commands to manage VMs on Vagoth
+
+A typical lifecycle is:
+  * new <vm_name> [k1=v1 ...] (provisioner adds new VM to cluster)
+  * start <vm_name> (allocator assigns VM to node and starts it)
+  * shutdown <vm_name> (polite shutdown of VM)
+  * undefine <vm_name> (unassign VM from current HV)
+  * deprovision <vm_name> (wipe VM data, and remove from current HV)
+  * delete <vm_name> (provisioner removes VM from cluster)
+""")
 
 # helper function to create a subcommand with argparse
 def make_subcommand(command, helptext, function):
     global p_global_subs
     parser = p_global_subs.add_parser(command, help=helptext)
-    parser.set_defaults(func=function)
+    parser.set_defaults(func=function, _command=command)
     return parser
 
 def cmd_list(args):
     global manager
-    for vm_name in manager.list_vms():
+    with manager.registry.lock: # hack!
+      for vm_name in sorted(manager.list_vms()):
         vm = manager.get_vm(vm_name)
-        state, substate = vm.get_state(), "fixme" # vm.get_state()
-        description = vm.get_definition().get('description', "")
+        state, substate = vm.get_state(), vm.get_state()
         node = vm.get_node()
-        assignment = node and node.get_name() or "-"
-        print("{0}: {1}/{2} ({3}) [hv={4}]".format(vm_name, state, substate, description, assignment))
+        assignment = node and node.get_name() or ""
+        print("{0} [{1}] parent={2}".format(vm_name, state, assignment))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
 
 def cmd_list_nodes(args):
     global manager
-    for node_name in manager.list_nodes():
+    with manager.registry.lock: # hack!
+      for node_name in sorted(manager.list_nodes()):
         node = manager.get_node(node_name)
         state = node.get_state()
-        description = node.get_definition().get('description', "")
-        print("{0}: {1}/{2} ({3})".format(node_name, state, state, description))
+        print("{0} [{1}]".format(node_name, state))
 p_list_nodes = make_subcommand("list_nodes", "List all Nodes", cmd_list_nodes)
 
 def cmd_start(args):
@@ -46,7 +61,7 @@ def cmd_start(args):
         print("start: OK ({0})".format(args.vm_name))
     except KeyError as e:
         print(e.message)
-p_start = make_subcommand("start", "Start a VM", cmd_start)
+p_start = make_subcommand("start", "Start a VM (& allocate if required)", cmd_start)
 p_start.add_argument("vm_name", type=str, help="Name of VM")
 
 def cmd_stop(args):
@@ -60,6 +75,98 @@ def cmd_stop(args):
 p_stop = make_subcommand("stop", "Stop a VM", cmd_stop)
 p_stop.add_argument("vm_name", type=str, help="Name of VM")
 
+def cmd_shutdown(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.shutdown()
+        print("shutdown: OK ({0})".format(args.vm_name))
+    except KeyError as e:
+        print(e.message)
+p_shutdown = make_subcommand("shutdown", "Politely stop a VM", cmd_shutdown)
+p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_info(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+    except KeyError as e:
+        print(e.message)
+        return
+    print "# definition:"
+    pprint(vm.get_definition())
+    print "# metadata:"
+    pprint(vm.get_metadata())
+    print "# state:"
+    pprint(vm.get_state())
+p_info = make_subcommand("info", "Display information about a VM", cmd_info)
+p_info.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_undefine(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+    except KeyError as e:
+        print(e.message)
+        return
+    node = vm.get_node()
+    vm.set_state('unassigned')
+    if node:
+        vm.undefine()
+p_undefine = make_subcommand("undefine", "Undefine VM from a node", cmd_undefine)
+p_undefine.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_define(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+        manager.allocate_vm(vm, hint=args.hint)
+    except KeyError as e:
+        print(e.message)
+p_define = make_subcommand("define", "Define a VM on a node", cmd_define)
+p_define.add_argument("vm_name", type=str, help="Name of VM")
+p_define.add_argument("-H", "--hint", help="Optional hint for the VM allocation plugin")
+
+def cmd_provision(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+        manager.allocate_vm(vm, hint=args.hint)
+        vm.provision()
+    except KeyError as e:
+        print(e.message)
+p_provision = make_subcommand("provision", "Provision a VM on a node (re-init first)", cmd_provision)
+p_provision.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_deprovision(args):
+    global manager
+    try:
+        vm = manager.get_vm(args.vm_name)
+        vm.set_state("unassigned")
+        vm.deprovision()
+    except KeyError as e:
+        print(e.message)
+p_deprovision = make_subcommand("deprovision", "Deprovision a VM on a node", cmd_deprovision)
+p_deprovision.add_argument("vm_name", type=str, help="Name of VM")
+
+def cmd_new(args):
+    global manager
+    kwargs = { "vm_name": args.vm_name }
+    for arg in args.kwargs:
+        k,v = arg.split("=",1)
+        kwargs[k] = v
+    manager.define_vm(args.vm_name, kwargs)
+p_new = make_subcommand("new", "Create a new VM in the cluster", cmd_new)
+p_new.add_argument("vm_name", type=str, help="Name of VM")
+p_new.add_argument("kwargs", nargs="*", help="key=value arguments")
+
+def cmd_delete(args):
+    global manager
+    vm = manager.get_vm(args.vm_name)
+    manager.undefine_vm(vm)
+p_delete = make_subcommand("delete", "Delete a VM from the cluster (must be undefined)", cmd_delete)
+p_delete.add_argument("vm_name", type=str, help="Name of VM")
+
 def cmd_poll(args):
     global manager
     monitor = manager.monitor
@@ -68,4 +175,5 @@ p_poll = make_subcommand("poll", "Poll cluster for status", cmd_poll)
 
 if __name__ == '__main__':
     args = p_global.parse_args()
-    args.func(args)
+    with Transaction(getpass.getuser()):
+        args.func(args)

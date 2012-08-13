@@ -20,8 +20,8 @@ class IProvisioner(object):
     VM will remain in the cluster, but keep a state of "DELETED", so
     that a future cleanup job can finish the deprovisioning.
     """
-    def __init__(config, global_config):
-        """Takes the local config dict and the global config object"""
+    def __init__(manager, config, global_config):
+        """Takes the manager, local config dict and the global config object"""
     def provision(vm_name, vm_definition):
         """Return a valid vm definition for this cluster"""
     def deprovision(vm_name, vm_definition):

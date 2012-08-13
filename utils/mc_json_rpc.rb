@@ -39,6 +39,15 @@ arguments = hash['arguments'] || {}
 identity = hash['identity']
 timeout = hash['timeout'] || 60
 
+newargs = {}
+arguments.each do |k,v|
+  if k[0..4] == "_SYM_" # a hack to support symbols
+    newargs[k[5..-1].to_sym] = v
+  else
+    newargs[k] = v
+  end
+end
+
 if agent and action
     mc = rpcclient(agent)
     mc.progress = false
@@ -48,7 +57,7 @@ if agent and action
     else
       mc.discover
     end
-    result = mc.send(action, arguments).map{|r| r.results}
+    result = mc.send(action, newargs).map{|r| r.results}
     puts JSON.dump(result)
     exit 0
 end

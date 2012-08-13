@@ -21,7 +21,7 @@ def dynamic_lookup(moduleColonName):
     try:
         return getattr(module, name)
     except AttributeError:
-        raise AttributeError("Could not load class %s in module %s" % (name, modulestr))
+        raise AttributeError("Could not load %s from module %s" % (name, modulestr))
 
 _static_config = None
 
@@ -34,10 +34,9 @@ class Config(object):
             searchpath = config_searchpaths or ["~/.config/sippe/vagoth.conf", "/etc/sippe/vagoth.conf"]
             _static_config = self.config = get_config(searchpath)
         self.node_registry = None
-        self.vm_registry = None
+        self.registry = None
         self.allocator = None
         self.driver = None
-        self.provisioner = None
         self.scheduler = None
 
     def _get_factory(self, section, factory_key="factory"):
@@ -48,23 +47,14 @@ class Config(object):
                 return dynamic_lookup(factory_str), self.config[section]
         return None, None
 
-    def get_vm_registry(self):
-        """Return the VM registry singleton"""
-        if self.vm_registry is not None:
-            return self.vm_registry
-        factory, vm_config = self._get_factory("vm_registry", "factory")
+    def get_registry(self):
+        """Return the registry singleton"""
+        if self.registry is not None:
+            return self.registry
+        factory, config = self._get_factory("registry", "factory")
         if factory:
-            self.vm_registry = factory(vm_config, self)
-            return self.vm_registry
-
-    def get_node_registry(self):
-        """Return the node registry singleton"""
-        if self.node_registry is not None:
-            return self.node_registry
-        factory, node_config = self._get_factory("node_registry", "factory")
-        if factory:
-            self.node_registry = factory(node_config, self)
-            return self.node_registry
+            self.registry = factory(config, self)
+            return self.registry
 
     def get_allocator(self):
         """Return the allocator singleton"""
@@ -92,12 +82,10 @@ class Config(object):
         """return a description, if set, for this vagoth controller"""
         return self.config.get('description', "description_unset")
 
-    def get_provisioner(self):
+    def get_provisioner_factory(self):
         """Cluster provisioner/deprovisioner for VMs"""
-        if self.provisioner is None:
-            factory, config = self._get_factory("provisioner", "factory")
-            self.provisioner = factory(config, self)
-        return self.provisioner
+        factory, config = self._get_factory("provisioner", "factory")
+        return factory, config
 
     def get_vm_factory(self):
         """Return the VM factory - used by vm_registry"""
@@ -117,3 +105,13 @@ class Config(object):
     def get_monitor_factory(self):
         factory, config = self._get_factory("monitor", "factory")
         return factory, config
+
+    def get_action(self, action):
+        actions = self.config["actions"]
+        if action in actions:
+            return dynamic_lookup(actions[action])
+
+    def get_logger(self):
+        """Implements ILogger interface"""
+        factory, config = self._get_factory("logger", "factory")
+        return factory(config, self)

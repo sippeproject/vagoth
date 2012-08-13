@@ -1,5 +1,6 @@
 
 from ..utils.mc_json_rpc import mcollective_call
+from ..exceptions import DriverException
 
 class GeatsMcollective(object):
     def __init__(self, local_config, global_config):
@@ -24,25 +25,27 @@ class GeatsMcollective(object):
         responses = mcollective_call("geats", action, timeout=timeout, identity=node_name, vm_name=vm_name, **kwargs)
         # should only be one response
         for res in responses:
-            return res["statuscode"], res["data"]
-        return None, None
+            return res["statuscode"], res["statusmsg"], res["data"]
+        return None, None, None
 
     def _call_single_exc(self, action, node, vm, timeout=60, **kwargs):
-        status, data = self._call_single(action, node, vm, timeout, **kwargs)
+        status, statusmsg, data = self._call_single(action, node, vm, timeout, **kwargs)
         if status is None:
             raise DriverException("No response received from %s" % (node,))
         if status != 0:
-            raise DriverException(node["statusmsg"])
+            raise DriverException(statusmsg) # FIXME
         return data
 
     def _call_boolean(self, action, node, vm, timeout=60, **kwargs):
-        status, data = self._call_single(action, node, vm, timeout, **kwargs)
+        status, statusmsg, data = self._call_single(action, node, vm, timeout, **kwargs)
+        if data:
+            return True
         if status == 0:
             return True
         elif status is None:
             raise DriverException("No response received from %s" % (node,))
         else:
-            raise DriverException(node["statusmsg"])
+            raise DriverException(str(statusmsg))
 
     def provision(self, node, vm):
         """Request a node to define & provision a VM"""
@@ -90,20 +93,3 @@ class GeatsMcollective(object):
 
     def migrate(self, node, vm, destination_node):
         return NotImplemented
-
-    def metrics(self, node=None):
-        return NotImplemented # FIXME
-        polled_metrics = self._call("metrics", node)
-        results = []
-        for metric in polled_metrics:
-            if node["statuscode"] == 0:
-                res = node["data"]["metrics"]
-                res["node"] = node["sender"]
-            else:
-                res = { "node": res["sender"] }
-            results.append(res)
-        if node:
-            if len(results) > 0:
-                return results[0]
-            return {}
-

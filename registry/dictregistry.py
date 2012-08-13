@@ -33,10 +33,10 @@ class DictRegistry(object):
         "children": [ "node001", ],
     } }
     """
-    def __init__(self, config, global_config):
+    def __init__(self, config, global_config, lock=None):
         self.config = config
         self.global_config = global_config
-        self.lock = RLock()
+        self.lock = lock or RLock()
         self.nodes = {}
         self.vms = {}
         self._load()
@@ -71,7 +71,7 @@ class DictRegistry(object):
 
     # VM definition, as set at creation time
     def get_vm_definition(self, vm_name, load=True):
-        vm = self.get_vm(vm_name)
+        vm = self.get_vm(vm_name, load)
         if vm:
             return vm["definition"]
 
@@ -99,7 +99,7 @@ class DictRegistry(object):
 
     # VM state, as last returned by hypervisor
     def get_vm_state(self, vm_name, load=True):
-        return self.get_vm(vm_name)["state"]
+        return self.get_vm(vm_name).get("state", "unknown")
 
     def set_vm_state(self, vm_name, state):
         with self.lock:
@@ -107,6 +107,18 @@ class DictRegistry(object):
             if vm["state"] != state:
                 vm["state"] = state
                 self._save()
+
+    # VM target state, as maintained by Vagoth
+    def get_vm_target_state(self, vm_name, load=True):
+        return self.get_vm(vm_name).get("target_state", None)
+
+    def set_vm_target_state(self, vm_name, target_state):
+        with self.lock:
+            vm = self.get_vm(vm_name, load=True)
+            if vm["target_state"] != state:
+                vm["target_state"] = state
+                self._save()
+        return self.get_vm(vm_name).get("target_state", None)
 
     # VM location
     def get_vm_location(self, vm_name, load=True):
@@ -134,9 +146,13 @@ class DictRegistry(object):
                 self._save()
 
     def get_node_last_status(self, node_name):
-        node = self.get_node(vm_name, load=True)
+        node = self.get_node(node_name, load=True)
         return node.get('last_status', None)
 
+    # children names
+    def get_node_children(self, node_name):
+        node = self.get_node(node_name, load=True)
+        return node.get('children')[:]
 
     def define_vm(self, vm_name, vm_definition, vm_metadata, vm_state="defined"):
         """Create a new VM entry in the DB"""
@@ -159,9 +175,10 @@ class DictRegistry(object):
             self._load()
             if vm_name not in self.vms:
                 raise VMNotFoundException("VM %s not found in registry when undefining" % (vm_name,))
-            if vm_name in self.vms and self.vms["node"] != None:
+            if vm_name in self.vms and self.vms[vm_name].get("parent", None) != None:
                 raise exceptions.VMStillAssignedException("VM %s is still assigned to %s" % (vm_name, self.vms["node"]))
             del self.vms[vm_name]
+            self._save()
 
     def define_node(self, name, definition, metadata, state="available"):
         with self.lock:
@@ -213,10 +230,11 @@ class DictRegistry(object):
         with self.lock:
             vm = self.get_vm(vm_name)
             if node_name is None:
-                if vm.get("parent", None) != None:
+                old_parent = vm.get("parent", None)
+                if old_parent is not None:
                     # unassign it from the previous node
-                    if node in self.nodes:
-                        node = self.get_node(node_name, load=False)
+                    if old_parent in self.nodes:
+                        node = self.get_node(old_parent, load=False)
                         node_children = node.get("children", None)
                         if node_children and vm_name in node_children:
                             node_children.remove(vm_name)

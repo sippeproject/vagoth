@@ -2,6 +2,9 @@
 # The extra exceptions that you'll encounter in Vagoth
 #
 
+class ActionException(RuntimeError):
+    """An exception raised during execution of an action"""
+
 class VMAlreadyAssignedException(RuntimeError):
     """VM is already assigned to a machine"""
 

@@ -3,7 +3,6 @@ class Node(object):
         assert isinstance(name, basestring)
         self.name = name
         self.manager = manager
-        self.registry = manager.node_registry
         self.driver = driver
         self.args = args
         self.kwargs = kwargs
@@ -15,10 +14,10 @@ class Node(object):
         return self.driver
 
     def get_definition(self):
-        return self.registry.get_node_definition(self.name)
+        return self.manager.registry.get_node_definition(self.name)
 
     def get_state(self):
-        return self.registry.get_node_state(self.name)
+        return self.manager.registry.get_node_state(self.name)
 
     def status(self):
         return self.driver.status(self)
