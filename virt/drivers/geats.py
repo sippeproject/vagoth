@@ -10,7 +10,7 @@ class GeatsMcollective(object):
 
     def _call(self, action, node=None, timeout=60, **kwargs):
         if node:
-            node_name = node.get_name()
+            node_name = node.node_id
             return mcollective_call("geats", action, timeout=timeout, identity=node_name, **kwargs)
         else:
             return mcollective_call("geats", action, timeout=timeout, **kwargs)
@@ -20,8 +20,8 @@ class GeatsMcollective(object):
             raise TypeError, "node argument is required"
         if vm is None:
             raise TypeError, "vm argument is required"
-        node_name = node.get_name()
-        vm_name = vm.get_name()
+        node_name = node.node_id
+        vm_name = vm.node_id
         responses = mcollective_call("geats", action, timeout=timeout, identity=node_name, vm_name=vm_name, **kwargs)
         # should only be one response
         for res in responses:
@@ -49,11 +49,11 @@ class GeatsMcollective(object):
 
     def provision(self, node, vm):
         """Request a node to define & provision a VM"""
-        return self._call_single_exc("provision", node, vm, definition=vm.get_definition())
+        return self._call_single_exc("provision", node, vm, definition=vm.definition)
 
     def define(self, node, vm):
         """Request node to define a VM"""
-        return self._call_single_exc("define", node, vm, definition=vm.get_definition())
+        return self._call_single_exc("define", node, vm, definition=vm.definition)
 
     def undefine(self, node, vm):
         """Request node to undefine a VM"""
@@ -78,7 +78,7 @@ class GeatsMcollective(object):
     def info(self, node, vm):
         info = self._call_single_exc("info", node, vm, timeout=5)
         if info:
-            info[u"node"] = unicode(node.get_name())
+            info[u"node"] = unicode(node.node_id)
         return info
 
     def status(self, node=None):

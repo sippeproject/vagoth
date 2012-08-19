@@ -1,32 +1,67 @@
 class Node(object):
-    def __init__(self, name, manager, driver, *args, **kwargs):
-        assert isinstance(name, basestring)
-        self.name = name
-        self.manager = manager
-        self.driver = driver
-        self.args = args
-        self.kwargs = kwargs
+    """
+    A Node represents a node entry in the Registry.
 
-    def get_name(self):
-        return self.name
+    The node_doc dict it receives should contain the following keys:
+        node_id - same as node_id passed in
+        name - a string
+        definition - a dict
+        metadata - a dict
+        parent - None, or the instance of the parent Node
+        tags - list of strings
+        keys - list of strings
 
-    def get_driver(self):
-        return self.driver
+    It exposes all of the above as attributes for reading.
 
-    def get_definition(self):
-        return self.manager.registry.get_node_definition(self.name)
+    No setter's are provided for the above, as it's expected that you'll
+    inherit this class and provide any methods you require there.
+    """
+    def __init__(self, manager, node_id, node_doc):
+        self._manager = manager
+        self._node_id = node_id
+        self._doc = node_doc
 
-    def get_state(self):
-        return self.manager.registry.get_node_state(self.name)
+    def refresh(self):
+        self._doc = self._manager.registry.get_node(self.node_id)
 
-    def status(self):
-        return self.driver.status(self)
+    # ensure it's read-only
+    @property
+    def node_id(self):
+        return self._node_id
 
-    def get_metrics():
-        self.driver.get
+    @property
+    def name(self):
+        return self._doc['name']
+
+    @property
+    def definition(self):
+        return self._doc['definition']
+
+    @property
+    def metadata(self):
+        return self._doc['metadata']
+
+    @property
+    def parent(self):
+        parent = self._doc['parent']
+        if parent:
+            return self._manager.get_node(parent)
+
+    @property
+    def tags(self):
+        return list(self._doc['tags'])
+
+    @property
+    def keys(self):
+        return list(self._doc['keys'])
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        return "<Node %s at %x>" % (self.name, id(self))
+        return "<Node %s at %x>" % (self.node_id, id(self))
+
+    def __eq__(self, other):
+        if isinstance(other, Node):
+            return self.node_id == other.node_id
+        raise Exception("Cannot test Node equality with %r" % (other,))
