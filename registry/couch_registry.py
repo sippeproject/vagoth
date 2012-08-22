@@ -95,7 +95,10 @@ class CouchRegistry(object):
         if current_parent and parent_node_id is not None:
             raise exceptions.NodeAlreadyHasParentException("Node {0} already has a parent of {1}".format(node_id, current_parent))
         doc['parent'] = parent_node_id
-        self.nodes.save(doc)
+        try:
+            self.nodes.save(doc)
+        except couchdb.http.ResourceConflict as e:
+            raise exceptions.RegistryException(*e.args)
 
     def _claim_unique_keys(self, node_id, new_keys, old_keys=None):
         """
@@ -184,12 +187,26 @@ class CouchRegistry(object):
         doc['keys'] = keys[1:] # treat name specially
         self.nodes.save(doc)
 
+    def _force_node_save(self, doc, count=5):
+        """
+        Attempt to save a node, despite any ResourceConflict's.
+        """
+        while count > 0:
+            count -= 1
+            try:
+                self.nodes.save(doc)
+                return
+            except couchdb.http.ResourceConflict as e:
+                newdoc = self.nodes[doc['_id']]
+                doc['_rev'] = newdoc['_rev']
+        raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
+
     def set_node(self, node_id, node_name=None, definition=None, metadata=None, keys=None, tags=None):
         """Change an existing node definition"""
-        if node_id not in self.nodes:
+        try:
+            doc = self.nodes[node_id]
+        except couchdb.http.ResourceNotFound:
             raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
-        # node already exists, so update it
-        doc = self.nodes[node_id]
         new_name_key = None
         old_name_key = None
         if definition:
@@ -211,12 +228,26 @@ class CouchRegistry(object):
                 if new_name_key:
                     self._claim_unique_keys(node_id, [], [new_name_key])
                 raise
-        self.nodes.save(doc)
+        self._force_node_save(doc)
         if old_name_key:
             del self.unique[old_name_key]
 
+    def update_metadata(self, node_id, extra_metadata=None, delete_keys=None):
+        """Update metadata with extra_metadata, and delete any keys in delete_keys"""
+        doc = self.nodes[node_id]
+        if extra_metadata:
+            doc['metadata'].update(extra_metadata)
+        if delete_keys:
+            for key in delete_keys:
+                if key in doc['metadata']:
+                    del doc['metadata'][key]
+        try:
+            self.nodes.save(doc)
+        except couchdb.http.ResourceConflict as e:
+            raise exceptions.RegistryException(*e.args)
+
     def delete_node(self, node_id):
-        """Delete a node"""
+        """Delete the node identified by node_id"""
         try:
             doc = self.nodes[node_id]
         except couchdb.http.ResourceNotFound:

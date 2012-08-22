@@ -39,13 +39,13 @@ class IRegistry:
         Returns an iterator returning each node's dictionary (see get_node)
         """
 
-    def get_nodes_with_type(self, node_type=None):
+    def get_nodes_with_type(node_type=None):
         """
         Returns an iterator, returning each node's dictionary (see get_node)
         if node_type is the same.
         """
 
-    def get_nodes_with_tag(self, node_tag=None):
+    def get_nodes_with_tag(node_tag=None):
         """
         Returns an iterator, returning each node's dictionary (see get_node),
         where the given tag 
@@ -57,7 +57,7 @@ class IRegistry:
         where the given node has a parent of node_parent
         """
 
-    def set_parent(self, node_id, parent_node_id):
+    def set_parent(node_id, parent_node_id):
         """
         Set the child's parent to parent_node_id.
 
@@ -66,13 +66,26 @@ class IRegistry:
         If a parent is already assigned, this will throw an exception.
         """
 
-    def add_node(self, node_id, node_name, node_type, definition, metadata=None, tags=None, keys=None):
+    def add_node(node_id, node_name, node_type, definition, metadata=None, tags=None, keys=None):
         """
         Add a node to the registry
         """
 
-    def set_node(self, node_id, node_name, definition=None, metadata=None, tags=None, keys=None):
+    def set_node(node_id, node_name, definition=None, metadata=None, tags=None, keys=None):
         """
         Change attributes of an existing node in the registry
         """
 
+    def update_metadata(node_id, extra_metadata, delete_keys=None):
+        """
+        Atomically call metadata.update(extra_metadata) and delete each key
+        in delete_keys.
+
+        This is available because set_node() will overwrite the existing
+        metadata en-masse, which with multiple systems could lead to a race
+        condition and unexpected results.
+
+        Metadata, unlike definition, tags, and keys, is likely to be changed
+        regularly by multiple processes, and it therefore justifies an extra
+        method.
+        """

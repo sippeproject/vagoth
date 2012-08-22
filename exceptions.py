@@ -3,7 +3,7 @@
 #
 
 class UniqueConstraintViolation(RuntimeError):
-    """Some uniqueness key is already allocated"""
+    """Some unique key is already taken in the cluster"""
 
 class NodeNotFoundException(RuntimeError):
     """Node not found in registry"""
@@ -27,4 +27,5 @@ class ProvisioningException(RuntimeError):
 class ActionException(RuntimeError):
     """An exception raised during execution of an action"""
 
-
+class RegistryException(RuntimeError):
+    """Error while writing to the Registry."""

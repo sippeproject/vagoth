@@ -164,3 +164,18 @@ class test_CouchRegistry(unittest.TestCase):
         self.registry.delete_node('0xdeadbeef')
         self.assertEqual(len(self.registry.nodes.data), 0)
         self.assertEqual(len(self.registry.unique.data), 0)
+
+    def test_update_metadata(self):
+        # add new keys
+        self.registry.update_metadata("0xdeadbeef", {
+            "one": "two"
+        })
+        self.assertEqual(self.registry.nodes['0xdeadbeef']['metadata']['one'], 'two')
+        # ensure it doesn't overwrite existing keys
+        self.registry.update_metadata("0xdeadbeef", {"three": "four"})
+        self.assertEqual(self.registry.nodes['0xdeadbeef']['metadata']['one'], 'two')
+        # ensure it deletes keys..
+        self.registry.update_metadata("0xdeadbeef", {}, ["one"])
+        self.assertNotIn("one", self.registry.nodes['0xdeadbeef']['metadata'])
+        # ..but not all keys
+        self.assertIn("three", self.registry.nodes['0xdeadbeef']['metadata'])
