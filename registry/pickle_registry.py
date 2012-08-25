@@ -6,7 +6,7 @@ import pickle
 import os.path
 from .. import exceptions
 from threading import RLock
-from dictregistry import DictRegistry
+from dict_registry import DictRegistry
 import fcntl
 
 class LockFile(object):
@@ -50,9 +50,9 @@ class PickleRegistry(DictRegistry):
         "children": [ "node001", ],
     } }
     """
-    def __init__(self, config, global_config):
+    def __init__(self, manager, config):
         lock = LockFile("/var/lock/vagoth.pickledb.lock")
-        DictRegistry.__init__(self, config, global_config, lock=lock)
+        DictRegistry.__init__(self, manager, config, lock=lock)
         # replace lock with our own file-based lock
 
     def _load(self):

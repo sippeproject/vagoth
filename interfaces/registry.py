@@ -13,7 +13,7 @@ class IRegistry:
 
         For example:
         {
-            "id": "node001",
+            "node_id": "node001",
             "name": "nice node name",
             "type": "vm",
             "definition": { ... node definition ... },
@@ -88,4 +88,9 @@ class IRegistry:
         Metadata, unlike definition, tags, and keys, is likely to be changed
         regularly by multiple processes, and it therefore justifies an extra
         method.
+        """
+
+    def __contains__(node_id):
+        """
+        A shortcut to see if the given node is in the registry
         """
