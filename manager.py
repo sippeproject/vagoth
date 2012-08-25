@@ -69,6 +69,9 @@ class Manager(object):
                 logging.debug("Exception while executing action %s" % (action,), exc_info=True)
                 raise
 
+    def cleanup(self):
+        self.scheduler.cleanup()
+
 manager = None
 def get_manager(config=None):
     global manager

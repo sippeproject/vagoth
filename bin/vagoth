@@ -15,7 +15,7 @@ logging.getLogger().setLevel(logging.INFO)
 def pprint(dictionary):
     print(json.dumps(dictionary, indent=2))
 
-manager = get_manager()
+manager = None
 
 p_global = argparse.ArgumentParser(add_help=True,
     formatter_class=argparse.RawTextHelpFormatter)
@@ -179,4 +179,8 @@ if __name__ == '__main__':
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     with Transaction(getpass.getuser()):
-        args.func(args)
+        try:
+            manager = get_manager()
+            args.func(args)
+        finally:
+            manager.cleanup()
