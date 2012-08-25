@@ -52,8 +52,8 @@ class CouchRegistry(object):
         key = "VAGOTH_NAME_"+name
         if key in self.unique:
             node_id = self.unique[key]['node_id']
-        if node_id in self.nodes:
-            return self.nodes[node_id]
+            if node_id in self.nodes:
+                return self.nodes[node_id]
         raise exceptions.NodeNotFoundException("Node with name {0} not found in registry.".format(name))
 
     def get_node_by_key(self, key=None):
