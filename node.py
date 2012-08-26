@@ -62,6 +62,5 @@ class Node(object):
         return "<Node %s at %x>" % (self.node_id, id(self))
 
     def __eq__(self, other):
-        if isinstance(other, Node):
-            return self.node_id == other.node_id
-        raise Exception("Cannot test Node equality with %r" % (other,))
+        assert other is None or isinstance(other, Node)
+        return self.node_id == other.node_id
