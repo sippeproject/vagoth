@@ -37,6 +37,10 @@ class Manager(object):
         nodedoc = self.registry.get_node(node_id) # can throw exception
         return self._instantiate_node(nodedoc)
 
+    def get_nodes(self):
+        for nodedoc in self.registry.get_nodes():
+            yield self._instantiate_node(nodedoc)
+
     def get_node_by_name(self, node_name):
         nodedoc = self.registry.get_node_by_name(node_name) # can throw exception
         return self._instantiate_node(nodedoc)

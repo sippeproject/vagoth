@@ -30,6 +30,10 @@ class Node(object):
         return self._node_id
 
     @property
+    def node_type(self):
+        return self._doc['type']
+
+    @property
     def name(self):
         return self._doc['name']
 
