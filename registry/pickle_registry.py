@@ -1,11 +1,9 @@
 #
-# Registry of VMs and Hypervisors
+# Registry of nodes
 #
 
 import pickle
 import os.path
-from .. import exceptions
-from threading import RLock
 from dict_registry import DictRegistry
 import fcntl
 
@@ -29,29 +27,15 @@ class LockFile(object):
 
 class PickleRegistry(DictRegistry):
     """
-    A simple pickle-file backed registry.
+    A simple registry based on DictRegistry but saving the contents
+    to a python pickle.  It uses a lockfile to ensure process-safety.
 
-    self.vms is set to the VM dictionary.
-    self.nodes is set to the nodes dictionary.
-
-    Example VM dict:
-    self.vms = { "vm_name": {
-      "definition": { ... vm definition ... },
-      "metadata": { ... vm metadata ... },
-      "state": "defined"|"autostart"|"stopped"|"migrating",
-      "parent": "node001"
-    } }
-
-    Example node dict:
-    self.nodes = { "node001": {
-        "definition": { ... node definition ... },
-        "metadata": { ... node metadata ... },
-        "state": { "up"|"down"|"locked" },
-        "children": [ "node001", ],
-    } }
+    Config variable `lockfile` will set the location of the lockfile.
+    Config variable `filename` will set the location of the pickle file.
     """
+
     def __init__(self, manager, config):
-        lock = LockFile("/var/lock/vagoth.pickledb.lock")
+        lock = LockFile(config.get("lockfile", "/var/lock/vagoth.pickledb.lock"))
         DictRegistry.__init__(self, manager, config, lock=lock)
         # replace lock with our own file-based lock
 

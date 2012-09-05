@@ -12,7 +12,8 @@ class CouchRegistry(object):
     self.nodes is set to the nodes table.
     self.unique is set to the unique keys table.
 
-    Example node doc:
+    Example node doc::
+
         "node001": {
             "node_id": "node001",
             "type": "type of node",

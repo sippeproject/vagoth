@@ -22,41 +22,50 @@ class Node(object):
         self._doc = node_doc
 
     def refresh(self):
+        """Refresh node data using the registry"""
         self._doc = self._manager.registry.get_node(self.node_id)
 
     # ensure it's read-only
     @property
     def node_id(self):
+        """The unique and immutable id of this node"""
         return self._node_id
 
     @property
     def node_type(self):
+        """The immutable type of this node"""
         return self._doc['type']
 
     @property
     def name(self):
+        """The unique but mutable name of this node"""
         return self._doc['name']
 
     @property
     def definition(self):
+        """The definition dictionary"""
         return self._doc['definition']
 
     @property
     def metadata(self):
+        """The metadata dictionary"""
         return self._doc['metadata']
 
     @property
     def parent(self):
+        """The parent node of this one, if set"""
         parent = self._doc['parent']
         if parent:
             return self._manager.get_node(parent)
 
     @property
     def tags(self):
+        """List of all tags for this node"""
         return list(self._doc['tags'])
 
     @property
     def keys(self):
+        """List of all unique keys for this node"""
         return list(self._doc['keys'])
 
     def __str__(self):

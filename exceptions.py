@@ -15,13 +15,13 @@ class NodeStillUsedException(RuntimeError):
     """Node is still in use when trying to undefine it"""
 
 class NodeAlreadyHasParentException(RuntimeError):
-    """VM is already assigned to a machine"""
+    """Node is already assigned another parent"""
 
 class NodeAlreadyExistsException(RuntimeError):
     """Tried to create the same node twice"""
 
 class ProvisioningException(RuntimeError):
-    """Could not provision the VM definition in the cluster"""
+    """Could not provision the node in the cluster"""
 
 # a generic class for action specific exceptions
 class ActionException(RuntimeError):

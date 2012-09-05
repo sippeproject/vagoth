@@ -13,6 +13,11 @@ class Monitor(object):
             self.create_missing = False
 
     def create_vm(self, vm_name, vm_status, node):
+        """
+        Given the VM name, status, and the node it was found
+        running on, call the provisioner to add it to the registry,
+        then set the parent to the node.
+        """
         provisioner = self.manager.provisioner
         logging.info("Creating VM %r on %r: %r" % (vm_name, node, vm_status))
         provisioner.provision(vm_name, node_name=vm_name, node_type='vm',
@@ -23,10 +28,25 @@ class Monitor(object):
         self.manager.registry.set_parent(vm_name, node.node_id)
 
     def unassign_vm(self, vm):
+        """
+        Unassign the given VM (set its parent to None)
+        """
         self.manager.registry.set_parent(vm.node_id, None)
         vm.state = "unassigned"
 
     def update_node(self, node, status):
+        """
+        Given an iterable of VM statuses containing
+        node definitions, check whether the registry
+        is up to date, and if not, update it.
+
+        If self.create_missing is set, create missing
+        VMs.
+
+        If a VM is not found on a node that it's
+        assigned to, it will be unassigned from that
+        node.
+        """
         vms = {}
         for vm_status in status:
             vm_name = vm_status["definition"]["name"]
@@ -61,6 +81,10 @@ class Monitor(object):
                 self.unassign_vm(vm)
 
     def poll_nodes(self):
+        """
+        Poll each node individually (by calling driver.status(node)) and
+        call self.update_node with the returned status.
+        """
         for node in self.manager.get_nodes_with_type("hv"):
             driver = node.driver
             if driver:

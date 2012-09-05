@@ -1,8 +1,9 @@
-"""
-sippe.cimbri.Conf - plugin manager
-"""
-
 def get_config(config_searchpaths):
+    """
+    Given a list of config searchpaths, instantiate the config object for
+    the first path, or instantiate an empty config object.  This uses
+    the configobj library to load the config.
+    """
     from configobj import ConfigObj
     import os.path
 
@@ -13,6 +14,10 @@ def get_config(config_searchpaths):
     return ConfigObj()
 
 def dynamic_lookup(moduleColonName):
+    """
+    Dynamically lookup an object in a module, given input of the form
+    modulename:objectname
+    """
     modulestr, name = moduleColonName.split(":")
     try:
         module = __import__(modulestr, fromlist=[name])
@@ -26,6 +31,11 @@ def dynamic_lookup(moduleColonName):
 _static_config = None
 
 class Config(object):
+    """
+    Config is a wrapper class around the real config object,
+    supplying methods to return or instantate class factories
+    found in the configuration.
+    """
     def __init__(self, config_searchpaths=None):
         global _static_config
         if _static_config != None:
@@ -47,22 +57,31 @@ class Config(object):
             raise KeyError("Could not locate %s in config file" % (config_path,))
 
     def get_factory(self, section, factory_key="factory"):
-        """return a factory and its configuration dict"""
+        """Return a tuple for a factory and its configuration dict"""
         config = self._lookup_config_section(section)
         factory_str = config[factory_key]
         return dynamic_lookup(factory_str), config
 
     def make_factory(self, section, context, factory_key="factory"):
+        """
+        Instantate a factory, passing in a context object and the section
+        config to the initialiser.
+        """
         factory_class, factory_config = self.get_factory(section, factory_key)
         return factory_class(context, factory_config)
 
     def get_node_factory(self, node_type):
-        """Return the class for a given node type"""
+        """
+        Return the class for a given node type
+        """
         node_types = self.config["node_types"]
         if node_type in node_types:
             return dynamic_lookup(node_types[node_type])
 
     def get_action(self, action):
+        """
+        Return the named action callable
+        """
         actions = self.config["actions"]
         if action in actions:
             return dynamic_lookup(actions[action])

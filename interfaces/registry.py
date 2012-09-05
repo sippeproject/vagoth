@@ -1,6 +1,15 @@
 class IRegistry:
-    def __init__(config, global_config):
-        """Registry is initialized with its local config and the global config object"""
+    """
+    The registry provides the data store for Vagoth.  It maintains
+    nodes, their type, definition, metadata, tags, unique keys,
+    and whether they have a parent.  It lets you add new nodes,
+    change node attributes, and atomically set the parent and
+    update metadata.
+    """
+    def __init__(manager, config):
+        """
+        Registry is initialized with the manager, and its config dict
+        """
 
     def list_nodes():
         """

@@ -19,7 +19,7 @@ manager = None
 
 p_global = argparse.ArgumentParser(add_help=True,
     formatter_class=argparse.RawTextHelpFormatter)
-p_global.add_argument("--verbose", action='store_true')
+p_global.add_argument("-v", "--verbose", action='store_true')
 p_global_subs = p_global.add_subparsers(title="subcommands", description="""Commands to manage VMs on Vagoth
 
 A typical lifecycle is:
@@ -130,7 +130,6 @@ def cmd_provision(args):
     global manager
     try:
         vm = manager.get_node(args.vm_name)
-        manager.allocate_vm(vm, hint=args.hint)
         vm.provision()
     except KeyError as e:
         print(e.message)
@@ -164,14 +163,12 @@ def cmd_delete(args):
     global manager
     vm = manager.get_node(args.vm_name)
     manager.provisioner.deprovision(vm)
-    manager.undefine_vm(vm)
-p_delete = make_subcommand("delete", "Delete a VM from the cluster (must be undefined)", cmd_delete)
+p_delete = make_subcommand("delete", "Delete a node from the cluster (must not be assigned)", cmd_delete)
 p_delete.add_argument("vm_name", type=str, help="Name of VM")
 
 def cmd_poll(args):
     global manager
-    monitor = manager.config.make_factory("virt/monitor", manager)
-    monitor.poll_nodes()
+    manager.action("vm_poll")
 p_poll = make_subcommand("poll", "Poll cluster for status", cmd_poll)
 
 if __name__ == '__main__':

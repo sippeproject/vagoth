@@ -1,12 +1,12 @@
-#
-# Registry of Nodes, backed by dictionaries
-#
-# It also calls _load and _save methods before hand after any
-# operations, even though it's probably a no-op here.  It uses
-# a lock (by default threading.RLock) to lock write operations.
-#
-# A different lock can passed in as an extra argument.
-#
+"""
+Registry of Nodes, backed by dictionaries
+
+It also calls _load and _save methods before hand after any
+operations, even though it's probably a no-op here.  It uses
+a lock (by default threading.RLock) to lock write operations.
+
+A different lock can passed in as an extra argument.
+"""
 
 import pickle
 import os.path
@@ -20,17 +20,18 @@ class DictRegistry(object):
     self.vms is set to the VM dictionary.
     self.nodes is set to the nodes dictionary.
 
-    Example node dict:
-    self.nodes = { "node001": {
-        "node_id": "node001",
-        "name": "node001",
-        "type": "vm",
-        "definition": { ... node definition ... },
-        "metadata": { ... node metadata ... },
-        "tags": [ "tag1", "tag2" ],
-        "keys": [ "ip-1.2.3.4" ],
-        "parent": None,
-    } }
+    Example node dict::
+
+        self.nodes = { "node001": {
+            "node_id": "node001",
+            "name": "node001",
+            "type": "vm",
+            "definition": { ... node definition ... },
+            "metadata": { ... node metadata ... },
+            "tags": [ "tag1", "tag2" ],
+            "keys": [ "ip-1.2.3.4" ],
+            "parent": None,
+        } }
     """
     def __init__(self, manager, config, lock=None):
         self.manager = manager
@@ -40,18 +41,22 @@ class DictRegistry(object):
         self.unique = {}
 
     def _load(self):
+        """Override to load the nodes and unique dicts"""
         pass
 
     def _save(self):
+        """Override to save the nodes and unique dicts"""
         pass
 
     def __contains__(self, node_id):
         return node_id in self.nodes
 
     def list_nodes(self):
+        """Return a list of all node_id"""
         return self.nodes.keys()
 
     def get_node(self, node_id):
+        """Return a node doc for the given node_id"""
         self._load()
         try:
             return self.nodes[node_id]
@@ -59,40 +64,50 @@ class DictRegistry(object):
             raise exceptions.NodeNotFoundException("Node %s not found in registry" % (vm_name,))
 
     def get_node_by_name(self, node_name):
+        """Return a node doc for the node with the given node_name"""
         self._load()
         for node in self.nodes.itervalues():
             if node.get('name', None) == node_name:
                 return node
 
     def get_node_by_key(self, key=None):
+        """Return a node doc for the node with the given key"""
         self._load()
         for node in self.nodes.itervalues():
             if key in node.get('keys', []):
                 return node
 
     def get_nodes(self):
+        """Return an iterable of node docs"""
         self._load()
         return self.nodes.values()
 
     def get_nodes_with_type(self, node_type=None):
+        """Return an iterable of node docs with the given type"""
         self._load()
         for node in self.nodes.itervalues():
             if node['type'] == node_type:
                 yield node
 
     def get_nodes_with_tag(self, node_tag=None):
+        """Return an iterable of node docs with the given tag"""
         self._load()
         for node in self.nodes.itervalues():
             if node_tag in node.get('tags',[]):
                 yield node
 
     def get_nodes_with_parent(self, node_parent=None):
+        """Return an iterable of node docs with the given parent id"""
         self._load()
         for node in self.nodes.itervalues():
             if node.get('parent', None) == node_parent:
                 yield node
 
     def set_parent(self, node_id, parent_node_id):
+        """
+        Set the parent node id, but only if it's not already set.
+        It can also be used to set the parent back to to None.
+        """
         with self.lock:
             self._load()
             try:
@@ -112,6 +127,10 @@ class DictRegistry(object):
             self._save()
 
     def add_node(self, node_id, node_name, node_type, definition, metadata=None, tags=None, keys=None):
+        """
+        Add a new node to the registry, ensuring that the node_id,
+        node_name, and keys are unique.
+        """
         with self.lock:
             self._load()
             if node_id in self.nodes:
@@ -138,6 +157,11 @@ class DictRegistry(object):
             self._save()
 
     def set_node(self, node_id, node_name=None, definition=None, metadata=None, tags=None, keys=None):
+        """
+        Update the node specified by node_id, ensuring that all uniqueness constraints are
+        still valid. No changes will be made if there is the chance of a name or unique key
+        collision.
+        """
         with self.lock:
             self._load()
             try:
@@ -176,6 +200,7 @@ class DictRegistry(object):
             self._save()
 
     def update_metadata(self, node_id, extra_metadata, delete_keys=None):
+        """Atomically update the metadata dict, or delete keys from it"""
         with self.lock:
             self._load()
             try:
@@ -191,6 +216,7 @@ class DictRegistry(object):
             self._save()
 
     def delete_node(self, node_id):
+        """Delete the given node, freeing up its resources"""
         with self.lock:
             try:
                 node = self.nodes[node_id]

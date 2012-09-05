@@ -3,6 +3,11 @@ from ..utils.mc_json_rpc import mcollective_call
 from ..exceptions import DriverException
 
 class GeatsMcollective(object):
+    """
+    Driver to talk to Geats using mcollective.  It uses the
+    mcollective_call() function from utils.mc_json_rpc to
+    launch ruby to make the call.
+    """
     def __init__(self, local_config, global_config):
         self.config = local_config
         self.global_config = global_config
@@ -64,24 +69,30 @@ class GeatsMcollective(object):
         return self._call_boolean("deprovision", node, vm)
 
     def start(self, node, vm):
+        """Request node to start the VM"""
         return self._call_boolean("start", node, vm, timeout=10)
 
     def reboot(self, node, vm):
+        """Request node to reboot the VM"""
         return self._call_boolean("reboot", node, vm, timeout=10)
 
     def stop(self, node, vm):
+        """Request node to stop (forcefully) the VM"""
         return self._call_boolean("stop", node, vm, timeout=10)
 
     def shutdown(self, node, vm):
+        """Request node to shutdown (nicely) the VM"""
         return self._call_boolean("shutdown", node, vm, timeout=10)
 
     def info(self, node, vm):
+        """Request information about the given VM from the node"""
         info = self._call_single_exc("info", node, vm, timeout=5)
         if info:
             info[u"node"] = unicode(node.node_id)
         return info
 
     def status(self, node=None):
+        """Request information about all VMs from the node"""
         res = self._call("status", node)
         vms = []
         for node in res:
@@ -92,4 +103,5 @@ class GeatsMcollective(object):
         return vms
 
     def migrate(self, node, vm, destination_node):
+        """Request the node to migrate the given VM to the destination node"""
         return NotImplemented

@@ -13,6 +13,10 @@ Manager = get_manager()
 Allocator = Manager.config.make_factory("virt/allocator", context=Manager)
 
 def log_vm_action(vm_name, action, msg=None):
+    """
+    Call logging.info(), using transaction.get_txid() and .get_source()
+    along with the VM name and the message, if any.
+    """
     txid = transaction.get_txid()
     source = transaction.get_source()
     if msg:
@@ -20,7 +24,12 @@ def log_vm_action(vm_name, action, msg=None):
     else:
         logging.info("vagoth: txid={0} source={1} action={2} vm={3}".format(txid, source, action, vm_name))
 
-def define(manager, vm_name, hint=None, **kwargs):
+def vm_define(manager, vm_name, hint=None, **kwargs):
+    """
+    If a VM isn't allocated to a hypervisor node, it will
+    allocate it to a hypervisor node using the `Allocator`,
+    and call driver.define(hypervisor, vm)
+    """
     global Allocator
     log_vm_action(vm_name, "define")
     vm = manager.get_node(vm_name)
@@ -34,7 +43,12 @@ def define(manager, vm_name, hint=None, **kwargs):
         vm.state = "defined"
         node.driver.define(node, vm)
 
-def provision(manager, vm_name, hint=None, **kwargs):
+def vm_provision(manager, vm_name, hint=None, **kwargs):
+    """
+    If a VM isn't allocated to a hypervisor node, it will
+    allocate it to a hypervisor node using the `Allocator`,
+    and call driver.provision(hypervisor, vm)
+    """
     global Allocator
     log_vm_action(vm_name, "provision")
     vm = manager.get_node(vm_name)
@@ -48,12 +62,17 @@ def provision(manager, vm_name, hint=None, **kwargs):
         vm.state = "defined"
         node.driver.define(node, vm)
 
-def start(manager, vm_name, **kwargs):
+def vm_start(manager, vm_name, **kwargs):
+    """
+    If a VM isn't allocated to a hypervisor node,
+    it will call the vm_define action, and if that
+    worked, call driver.start(hypervisor, vm)
+    """
     log_vm_action(vm_name, "start")
     vm = manager.get_node(vm_name)
     node = vm.parent
     if not node:
-        manager.action("define", vm_name=vm_name, **kwargs)
+        manager.action("vm_define", vm_name=vm_name, **kwargs)
         vm.refresh() # pick up state change
         node = vm.parent
     if node:
@@ -62,7 +81,10 @@ def start(manager, vm_name, **kwargs):
     else:
         raise ActionException("VM not assigned")
 
-def stop(manager, vm_name, **kwargs):
+def vm_stop(manager, vm_name, **kwargs):
+    """
+    call driver.stop(hypervisor, vm)
+    """
     log_vm_action(vm_name, "stop")
     vm = manager.get_node(vm_name)
     node = vm.parent
@@ -70,7 +92,10 @@ def stop(manager, vm_name, **kwargs):
         vm.state = "stopping"
         node.driver.stop(node, vm)
 
-def shutdown(manager, vm_name, **kwargs):
+def vm_shutdown(manager, vm_name, **kwargs):
+    """
+    call driver.stop(hypervisor, vm)
+    """
     log_vm_action(vm_name, "stop")
     vm = manager.get_node(vm_name)
     node = vm.parent
@@ -78,7 +103,10 @@ def shutdown(manager, vm_name, **kwargs):
         vm.state = "shutting down"
         node.driver.shutdown(node, vm)
 
-def reboot(manager, vm_name, **kwargs):
+def vm_reboot(manager, vm_name, **kwargs):
+    """
+    call driver.reboot(hypervisor, vm)
+    """
     log_vm_action(vm_name, "reboot")
     vm = manager.get_node(vm_name)
     node = vm.parent
@@ -86,7 +114,10 @@ def reboot(manager, vm_name, **kwargs):
         vm.state = "rebooting"
         node.driver.reboot(node, vm)
 
-def undefine(manager, vm_name):
+def vm_undefine(manager, vm_name):
+    """
+    call driver.undefine(hypervisor, vm)
+    """
     log_vm_action(vm_name, "undefine")
     vm = manager.get_node(vm_name)
     node = vm.parent
@@ -94,7 +125,10 @@ def undefine(manager, vm_name):
         return
     node.driver.undefine(node, vm)
 
-def deprovision(manager, vm_name):
+def vm_deprovision(manager, vm_name):
+    """
+    call driver.deprovision(hypervisor, vm)
+    """
     log_vm_action(vm_name, "deprovision")
     vm = manager.get_node(vm_name)
     node = vm.parent
@@ -102,6 +136,9 @@ def deprovision(manager, vm_name):
         return
     node.driver.deprovision(node, vm)
 
-def poll(manager, **kwargs):
+def vm_poll(manager, **kwargs):
+    """
+    instantiate the monitor and poll all nodes
+    """
     monitor = Manager.config.make_factory("virt/monitor", context=Manager)
     monitor.poll_nodes()

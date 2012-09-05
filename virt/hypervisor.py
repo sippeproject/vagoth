@@ -3,6 +3,8 @@ from ..node import Node
 class Hypervisor(Node):
     """
     A basic Hypervisor class.  A hypervisor has a driver
+
+    It inherits vagoth.Node_
     """
 
     def __init__(self, manager, node_id, node_doc):
@@ -11,22 +13,23 @@ class Hypervisor(Node):
     # FIXME, duplicated in VirtualMachine (but not really a Node thing)
     @property
     def state(self):
+        """Retrieve the state attribute from the metadata"""
         return self._doc['metadata'].get('state', 'unknown')
 
     @state.setter
     def state(self, state):
-        self.refresh()
-        metadata = self._doc['metadata']
-        metadata['state'] = state
-        self.manager.registry.set_node(self.node_id, metadata=metadata)
+        """Set the state attribute in the metadata"""
+        self._registry.update_metadata(self.node_id, { "state": state, })
         self.refresh()
 
     @property
     def children(self):
+        """Return the children of this hypervisor"""
         return manager.get_nodes_with_parent(self._node_id)
 
     @property
     def driver(self):
+        """Return the driver for this hypervisor"""
         factory, config = self._manager.config.get_factory("virt/driver")
         return factory(config, self._manager.config)
 
