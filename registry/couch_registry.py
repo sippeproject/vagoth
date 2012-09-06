@@ -20,7 +20,7 @@ class CouchRegistry(object):
             "name": "nice node name",
             "definition": { ... node definition ... },
             "metadata": { ... node metadata ... },
-            "keys": [ "one", "two", "three" ],
+            "unique_keys": [ "one", "two", "three" ],
             "parent": None,
         }
     """
@@ -148,11 +148,11 @@ class CouchRegistry(object):
         # processes)
         #
 
-    def add_node(self, node_id, node_name, node_type, definition, metadata=None, keys=None, tags=None):
+    def add_node(self, node_id, node_name, node_type, definition, metadata=None, unique_keys=None, tags=None):
         """
         Create new node in registry
         """
-        if keys is None: keys = []
+        if unique_keys is None: unique_keys = []
         if metadata is None: metadata = {}
         if tags is None: tags = []
         # create a bare document as a reservation
@@ -163,7 +163,7 @@ class CouchRegistry(object):
                 "name": None,
                 "definition": {},
                 "metadata": {},
-                "keys": [],
+                "unique_keys": [],
                 "tags": [],
                 "parent": None,
             }
@@ -172,11 +172,11 @@ class CouchRegistry(object):
         doc = self.nodes[node_id]
         # add node_name to unique keys
         node_name_key = "VAGOTH_NAME_"+node_name
-        if node_name_key not in keys:
-            keys.insert(0, node_name_key)
+        if node_name_key not in unique_keys:
+            unique_keys.insert(0, node_name_key)
         # claim all unique keys, or abort
         try:
-            self._claim_unique_keys(node_id, keys)
+            self._claim_unique_keys(node_id, unique_keys)
         except exceptions.UniqueConstraintViolation:
             self.nodes.delete(doc)
             raise
@@ -185,7 +185,7 @@ class CouchRegistry(object):
         doc['metadata'] = metadata
         doc['name'] = node_name
         doc['tags'] = tags
-        doc['keys'] = keys[1:] # treat name specially
+        doc['unique_keys'] = unique_keys[1:] # treat name specially
         self.nodes.save(doc)
 
     def _force_node_save(self, doc, count=5):
@@ -202,7 +202,7 @@ class CouchRegistry(object):
                 doc['_rev'] = newdoc['_rev']
         raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
 
-    def set_node(self, node_id, node_name=None, definition=None, metadata=None, keys=None, tags=None):
+    def set_node(self, node_id, node_name=None, definition=None, metadata=None, unique_keys=None, tags=None):
         """Change an existing node definition"""
         try:
             doc = self.nodes[node_id]
@@ -221,10 +221,10 @@ class CouchRegistry(object):
             self._claim_unique_keys(node_id, [new_name_key])
             old_name_key = 'VAGOTH_NAME_'+doc['name']
             doc['name'] = node_name
-        if keys:
+        if unique_keys:
             try:
-                self._claim_unique_keys(node_id, keys, doc['keys'])
-                doc['keys'] = keys
+                self._claim_unique_keys(node_id, unique_keys, doc['unique_keys'])
+                doc['unique_keys'] = unique_keys
             except exceptions.UniqueConstraintViolation:
                 if new_name_key:
                     self._claim_unique_keys(node_id, [], [new_name_key])
@@ -253,8 +253,8 @@ class CouchRegistry(object):
             doc = self.nodes[node_id]
         except couchdb.http.ResourceNotFound:
             raise exceptions.NodeNotFoundException("Node {0} not found in registry".format(node_id))
-        keys = doc.get('keys', [])
+        unique_keys = doc.get('unique_keys', [])
         name_key = 'VAGOTH_NAME_'+doc['name']
-        keys.insert(0, name_key)
-        self._claim_unique_keys(node_id, [], keys)
+        unique_keys.insert(0, name_key)
+        self._claim_unique_keys(node_id, [], unique_keys)
         del self.nodes[node_id]

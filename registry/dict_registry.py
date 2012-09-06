@@ -29,7 +29,7 @@ class DictRegistry(object):
             "definition": { ... node definition ... },
             "metadata": { ... node metadata ... },
             "tags": [ "tag1", "tag2" ],
-            "keys": [ "ip-1.2.3.4" ],
+            "unique_keys": [ "ip-1.2.3.4" ],
             "parent": None,
         } }
     """
@@ -74,7 +74,7 @@ class DictRegistry(object):
         """Return a node doc for the node with the given key"""
         self._load()
         for node in self.nodes.itervalues():
-            if key in node.get('keys', []):
+            if key in node.get('unique_keys', []):
                 return node
 
     def get_nodes(self):
@@ -126,7 +126,7 @@ class DictRegistry(object):
                 raise exceptions.NodeAlreadyHasParentException("Node already has a parent. Unassign it first: %s" % (node_id,))
             self._save()
 
-    def add_node(self, node_id, node_name, node_type, definition, metadata=None, tags=None, keys=None):
+    def add_node(self, node_id, node_name, node_type, definition, metadata=None, tags=None, unique_keys=None):
         """
         Add a new node to the registry, ensuring that the node_id,
         node_name, and keys are unique.
@@ -142,21 +142,21 @@ class DictRegistry(object):
                 "definition": definition or {},
                 "metadata": metadata or {},
                 "tags": tags or [],
-                "keys": keys or [],
+                "unique_keys": unique_keys or [],
             }
             namekey = "VAGOTH_NAME_%s" % node_name
             if namekey in self.unique:
                 raise exceptions.UniqueConstraintViolation("Node name already taken: %s" % (node_name,))
-            for key in keys:
+            for key in unique_keys:
                 if key in self.unique:
                     raise exceptions.UniqueConstraintViolation("Unique key is already taken: %s" % (key,))
             self.unique[namekey] = node_id
-            for key in keys:
+            for key in unique_keys:
                 self.unique[key] = node_id
             self.nodes[node_id] = node
             self._save()
 
-    def set_node(self, node_id, node_name=None, definition=None, metadata=None, tags=None, keys=None):
+    def set_node(self, node_id, node_name=None, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Update the node specified by node_id, ensuring that all uniqueness constraints are
         still valid. No changes will be made if there is the chance of a name or unique key
@@ -172,8 +172,8 @@ class DictRegistry(object):
                 namekey = "VAGOTH_NAME_%s" % (node_name,)
                 if namekey in self.unique:
                     raise exceptions.UniqueConstraintViolation("Node name already taken: %s" % (node_name,))
-            if keys:
-                for key in keys:
+            if unique_keys:
+                for key in unique_keys:
                     if key in self.unique and self.unique[key] != node_id:
                         raise exceptions.UniqueConstraintViolation("Unique key is already taken: %s" % (key,))
             if definition:
@@ -182,14 +182,14 @@ class DictRegistry(object):
                 node["metadata"] = metadata
             if tags:
                 node["tags"] = tags
-            if keys: # keys are the new set of keys
-                for key in node["keys"]:
-                    if key in self.unique and self.unique[key] == node_id and key not in keys:
+            if unique_keys: # unique_keys are the new set of keys
+                for key in node["unique_keys"]:
+                    if key in self.unique and self.unique[key] == node_id and key not in unique_keys:
                         del self.unique[key]
-                for key in keys:
+                for key in unique_keys:
                     if key not in self.unique:
                         self.unique[key] = node_id
-                node["keys"] = keys
+                node["unique_keys"] = unique_keys
             if node_name:
                 oldnamekey = "VAGOTH_NAME_%s" % (node["name"],)
                 newnamekey = "VAGOTH_NAME_%s" % (node_name,)
@@ -231,7 +231,7 @@ class DictRegistry(object):
             namekey = "VAGOTH_NAME_%s" % (node["name"],)
             if namekey in self.unique and self.unique[namekey] == node_id:
                 del self.unique[namekey]
-            for key in node.get("keys", []):
+            for key in node.get("unique_keys", []):
                 if key in self.unique and self.unique[key] == node_id:
                     del self.unique[key]
             del self.nodes[node_id]

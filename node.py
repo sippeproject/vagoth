@@ -9,7 +9,7 @@ class Node(object):
         metadata - a dict
         parent - None, or the instance of the parent Node
         tags - list of strings
-        keys - list of strings
+        unique_keys - list of strings
 
     It exposes all of the above as attributes for reading.
 
@@ -64,9 +64,9 @@ class Node(object):
         return list(self._doc['tags'])
 
     @property
-    def keys(self):
+    def unique_keys(self):
         """List of all unique keys for this node"""
-        return list(self._doc['keys'])
+        return list(self._doc['unique_keys'])
 
     def __str__(self):
         return self.name

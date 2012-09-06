@@ -18,7 +18,7 @@ class testDictRegistry(unittest.TestCase):
             node_name="node001.example.com",
             definition={ "name": "0xdeadbeef", "fqdn": "node001.example.com" },
             tags=["tag1", "tag2"],
-            keys=["node001_uniquekey"])
+            unique_keys=["node001_uniquekey"])
 
     def test_contains(self):
         self.assertIn("0xdeadbeef", self.registry)
@@ -37,10 +37,10 @@ class testDictRegistry(unittest.TestCase):
         self.assertNotIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
 
     def test_change_keys(self):
-        self.registry.set_node("0xdeadbeef", keys=["MASTER"])
+        self.registry.set_node("0xdeadbeef", unique_keys=["MASTER"])
         self.assertIn("MASTER", self.registry.unique)
         self.assertNotIn("node001_uniquekey", self.registry.unique)
-        node_keys = self.registry.nodes['0xdeadbeef']['keys']
+        node_keys = self.registry.nodes['0xdeadbeef']['unique_keys']
         self.assertEqual(node_keys, ["MASTER"])
 
     def test_get_node_by_name(self):

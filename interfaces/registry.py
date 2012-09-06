@@ -38,7 +38,7 @@ class IRegistry:
         Return the node with the given name of node_name
         """
 
-    def get_node_by_key(key=None):
+    def get_node_by_unique_key(key=None):
         """
         Return the node with given unique key
         """
@@ -75,12 +75,12 @@ class IRegistry:
         If a parent is already assigned, this will throw an exception.
         """
 
-    def add_node(node_id, node_name, node_type, definition, metadata=None, tags=None, keys=None):
+    def add_node(node_id, node_name, node_type, definition, metadata=None, tags=None, unique_keys=None):
         """
         Add a node to the registry
         """
 
-    def set_node(node_id, node_name, definition=None, metadata=None, tags=None, keys=None):
+    def set_node(node_id, node_name, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Change attributes of an existing node in the registry
         """
