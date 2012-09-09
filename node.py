@@ -76,4 +76,6 @@ class Node(object):
 
     def __eq__(self, other):
         assert other is None or isinstance(other, Node)
+        if other is None:
+            return False
         return self.node_id == other.node_id

@@ -8,10 +8,8 @@ class GeatsMcollective(object):
     mcollective_call() function from utils.mc_json_rpc to
     launch ruby to make the call.
     """
-    def __init__(self, local_config, global_config):
+    def __init__(self, manager, local_config):
         self.config = local_config
-        self.global_config = global_config
-        #self.node_registry = global_config.get_registry()
 
     def _call(self, action, node=None, timeout=60, **kwargs):
         if node:

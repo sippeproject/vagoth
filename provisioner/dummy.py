@@ -17,7 +17,7 @@ class DummyProvisioner(object):
                   definition=None,
                   metadata=None,
                   tags=None,
-                  keys=None):
+                  unique_keys=None):
         # ensure it's a new node
         if node_id in self.manager.registry:
             raise NodeAlreadyExistsException("Node {0} already exists in registry".format(node_id))
@@ -27,7 +27,7 @@ class DummyProvisioner(object):
             definition = definition,
             metadata = metadata,
             tags = tags,
-            keys = keys
+            unique_keys = unique_keys
         )
             
     def deprovision(self, node_id):

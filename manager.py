@@ -66,6 +66,8 @@ class Manager(object):
 
     def get_nodes_with_parent(self, node_parent):
         """Return an iterable of all nodes with the given parent node"""
+        if hasattr(node_parent, "node_id"):
+            node_parent = node_parent.node_id
         for nodedoc in self.registry.get_nodes_with_parent(node_parent):
             yield self._instantiate_node(nodedoc)
 

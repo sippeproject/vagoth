@@ -22,7 +22,7 @@ class IProvisioner(object):
     """
     def __init__(manager, config, global_config):
         """Takes the manager, local config dict and the global config object"""
-    def provision(vm_name, vm_definition):
+    def provision(node_id, node_name=None, node_type=None, definition=None, metadata=None, tags=None, unique_keys=None):
         """Return a valid vm definition for this cluster"""
     def deprovision(vm_name, vm_definition):
         """

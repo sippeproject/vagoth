@@ -36,6 +36,10 @@ class testDictRegistry(unittest.TestCase):
         self.assertIn("VAGOTH_NAME_foo.example.com", self.registry.unique)
         self.assertNotIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
 
+    def test_change_tags(self):
+        self.registry.set_node("0xdeadbeef", tags=["vm"])
+        self.assertIn("vm", self.registry.nodes['0xdeadbeef']['tags'])
+
     def test_change_keys(self):
         self.registry.set_node("0xdeadbeef", unique_keys=["MASTER"])
         self.assertIn("MASTER", self.registry.unique)

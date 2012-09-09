@@ -19,7 +19,7 @@ class Hypervisor(Node):
     @state.setter
     def state(self, state):
         """Set the state attribute in the metadata"""
-        self._registry.update_metadata(self.node_id, { "state": state, })
+        self._manager.registry.update_metadata(self.node_id, { "state": state, })
         self.refresh()
 
     @property
@@ -30,8 +30,7 @@ class Hypervisor(Node):
     @property
     def driver(self):
         """Return the driver for this hypervisor"""
-        factory, config = self._manager.config.get_factory("virt/driver")
-        return factory(config, self._manager.config)
+        return self._manager.config.make_factory("virt/driver", self._manager)
 
     def __str__(self):
         return self.name

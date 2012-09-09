@@ -214,6 +214,8 @@ class CouchRegistry(object):
             doc['definition'] = definition
         if metadata:
             doc['metadata'] = metadata
+        if tags:
+            doc['tags'] = tags
         # update name (remember to cleanup old_name_key if set,
         #               or new_name_key on failure)
         if node_name and doc['name'] != node_name:
