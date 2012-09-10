@@ -37,7 +37,7 @@ class DummyProvisioner(object):
         if parent_node_id and parent_node_id in self.manager.registry:
             raise NodeStillUsedException("Node {0} has a parent assigned.".format(node_id))
         # check for children
-        children = self.manager.registry.get_nodes_with_parent(node_id)
+        children = list(self.manager.registry.get_nodes_with_parent(node_id))
         if len(children) > 0:
             raise NodeStillUsedException("Node {0} has children assigned.".format(node_id))
         # node seems like an orphan, so it's ok to delete it
