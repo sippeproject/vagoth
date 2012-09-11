@@ -28,6 +28,10 @@ class VirtualMachine(Node):
         """Schedule the start action"""
         self._scheduler.action(self.node_id, "vm_start", vm_name=self.node_id, hint=hint)
 
+    def define(self, hint=None):
+        """Schedule the define action"""
+        self._scheduler.action(self.node_id, "vm_define", vm_name=self.node_id, hint=hint)
+
     def stop(self):
         """Schedule the stop action"""
         self._scheduler.action(self.node_id, "vm_stop", vm_name=self.node_id)
