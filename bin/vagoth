@@ -43,35 +43,59 @@ def make_subcommand(command, helptext, function):
 def cmd_list(args):
     global manager
     for node in sorted(manager.get_nodes()):
-      parent = node.parent
-      assignment = parent and parent.name or ""
-      print("{0} [{1}] type={2} parent={3}".format(node.name, node.state, node.node_type, assignment))
+        if args.type and node.node_type != args.type:
+            continue
+        if args.tag and args.tag not in node.tags:
+            continue
+        if args.uniquekey and args.uniquekey not in node.unique_keys:
+            continue
+        parent = node.parent
+        assignment = parent and parent.name or ""
+        print("{0} [{1}] type={2} parent={3} tags={4}".format(
+            node.name, node.state, node.node_type,
+            assignment, ",".join(node.tags)))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
+p_list.add_argument("--tag", type=str, help="Limit by tag", default=None)
+p_list.add_argument("--type", type=str, help="Limit by type", default=None)
+p_list.add_argument("--uniquekey", type=str, help="Limit by unique key", default=None)
 
-def print_node_and_children(node, indent=0):
+def print_node_and_children(node, parents, indent=0):
     global manager
     print("  "*indent+"{0} [{1}] type={2}".format(node.name, node.state, node.node_type))
-    children = sorted(manager.get_nodes_with_parent(node))
+    children = parents.get(node.node_id, [])
     for child in children:
-        print_node_and_children(child, indent+1)
+        print_node_and_children(child, parents, indent+1)
 
 def cmd_tree(args):
     global manager
     roots = []
+    parents = {}
     nodes = manager.get_nodes()
     for node in nodes:
         if node.parent is None:
             roots.append(node)
-    # being lazy, querying again
+        else:
+            if node.parent.node_id in parents:
+                parents[node.parent.node_id].append(node)
+            else:
+                parents[node.parent.node_id] = [node,]
     for node in sorted(roots):
-        print_node_and_children(node)
+        print_node_and_children(node, parents, indent=0)
 p_tree = make_subcommand("tree", "List all VMs as a tree", cmd_tree)
+
+def cmd_listvm(args):
+    global manager
+    for node in sorted(manager.get_nodes_with_type("vm")):
+      parent = node.parent
+      assignment = parent and parent.name or ""
+      print("{0} [{1}] type={2} parent={3}".format(node.name, node.state, node.node_type, assignment))
+p_listvm = make_subcommand("listvm", "List all VMs (type=vm)", cmd_listvm)
 
 def cmd_listhv(args):
     global manager
     for node in manager.get_nodes_with_type('hv'):
         print("{0} [{1}]".format(node.name, node.state))
-p_listhv = make_subcommand("listhv", "List all hypervisor nodes", cmd_listhv)
+p_listhv = make_subcommand("listhv", "List all hypervisor nodes (type=hv)", cmd_listhv)
 
 def status(command, node_name, msg):
     print("{0}: {1} ({2})".format(command, msg, node_name))

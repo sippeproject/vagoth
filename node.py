@@ -7,7 +7,7 @@ class Node(object):
         name - a string
         definition - a dict
         metadata - a dict
-        parent - None, or the instance of the parent Node
+        parent - None, or the node_id of the parent Node
         tags - list of strings
         unique_keys - list of strings
 
