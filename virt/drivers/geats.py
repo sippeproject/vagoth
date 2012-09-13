@@ -92,13 +92,21 @@ class GeatsMcollective(object):
     def status(self, node=None):
         """Request information about all VMs from the node"""
         res = self._call("status", node)
-        vms = []
+        nodes = []
         for node in res:
             if node["statuscode"] == 0:
                 for vm in node["data"]["vms"].values():
-                    vm[u"node"] = node["sender"]
-                    vms.append(vm)
-        return vms
+                    vm[u"_parent"] = node["sender"]
+                    vm[u"_name"] = vm["definition"]["name"]
+                    vm[u"_type"] = "vm"
+                    nodes.append(vm)
+                # add hypervisor server
+                hv = node["data"].get("status", {})
+                hv[u"_parent"] = None
+                hv[u"_name"] = node["sender"]
+                hv[u"_type"] = "hv"
+                nodes.append(hv)
+        return nodes
 
     def migrate(self, node, vm, destination_node):
         """Request the node to migrate the given VM to the destination node"""

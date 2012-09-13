@@ -49,7 +49,9 @@ class Monitor(object):
         """
         vms = {}
         for vm_status in status:
-            vm_name = vm_status["definition"]["name"]
+            vm_name = vm_status["_name"]
+            if vm_name == node.node_id:
+                continue
             vms[vm_name] = vm_status
             vm_state, vm_target_state = vm_status["state"]
             try:
