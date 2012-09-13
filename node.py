@@ -79,3 +79,6 @@ class Node(object):
         if other is None:
             return False
         return self.node_id == other.node_id
+
+    def __ne__(self, other):
+        return not self == other
