@@ -144,7 +144,7 @@ def cmd_info(args):
     print "# state:"
     pprint(vm.state)
     print "# parent:"
-    pprint(vm.parent.name)
+    pprint(vm.parent and vm.parent.name)
     print "# definition:"
     pprint(vm.definition)
     print "# metadata:"
