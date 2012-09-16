@@ -8,8 +8,6 @@ a lock (by default threading.RLock) to lock write operations.
 A different lock can passed in as an extra argument.
 """
 
-import pickle
-import os.path
 from .. import exceptions
 from threading import RLock
 
@@ -134,7 +132,7 @@ class DictRegistry(object):
         with self.lock:
             self._load()
             if node_id in self.nodes:
-                raise NodeAlreadyExistsException("Node already exists in registry: %s" % (node_id,))
+                raise exceptions.NodeAlreadyExistsException("Node already exists in registry: %s" % (node_id,))
             node = {
                 "node_id": node_id,
                 "name": node_name,
@@ -224,10 +222,10 @@ class DictRegistry(object):
             except KeyError:
                 raise exceptions.NodeNotFoundException("Node not found: %s" % (node_id,))
             if node.get("parent", None):
-                raise NodeStillUsedException("Node still has a parent: %s" % (node_id,))
+                raise exceptions.NodeStillUsedException("Node still has a parent: %s" % (node_id,))
             children = list(self.get_nodes_with_parent(node_id))
             if children:
-                raise NodeStillUsedException("Node still has children: %s" % (node_id,))
+                raise exceptions.NodeStillUsedException("Node still has children: %s" % (node_id,))
             # not in use, so delete it and its unique keys
             namekey = "VAGOTH_NAME_%s" % (node["name"],)
             if namekey in self.unique and self.unique[namekey] == node_id:

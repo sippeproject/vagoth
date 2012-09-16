@@ -3,9 +3,7 @@
 #
 
 import couchdb
-import os.path
 from .. import exceptions
-import couchdb
 
 class CouchRegistry(object):
     """
@@ -25,8 +23,7 @@ class CouchRegistry(object):
         }
     """
     def __init__(self, manager, config):
-        #self.manager = manager
-        #self.config = config
+        self.manager = manager
         self.couchdb = couchdb.Server(config['couch_server'])
         self.nodes = self.couchdb[config['couch_nodes_table']]
         self.unique = self.couchdb[config['couch_unique_table']]
@@ -125,7 +122,6 @@ class CouchRegistry(object):
                 for delkey in claimed_keys:
                     del self.unique[delkey]
         if old_keys:
-            from pprint import pprint as pp
             for old_key in old_keys:
                 if old_key in new_keys:
                     continue
@@ -197,7 +193,7 @@ class CouchRegistry(object):
             try:
                 self.nodes.save(doc)
                 return
-            except couchdb.http.ResourceConflict as e:
+            except couchdb.http.ResourceConflict:
                 newdoc = self.nodes[doc['_id']]
                 doc['_rev'] = newdoc['_rev']
         raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
