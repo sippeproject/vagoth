@@ -141,12 +141,18 @@ p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
 def cmd_info(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
+    print "# state:"
+    pprint(vm.state)
+    print "# parent:"
+    pprint(vm.parent.name)
     print "# definition:"
     pprint(vm.definition)
     print "# metadata:"
     pprint(vm.metadata)
-    print "# state:"
-    pprint(vm.state)
+    print "# tags:"
+    pprint(vm.tags)
+    print "# unique keys:"
+    pprint(vm.unique_keys)
 p_info = make_subcommand("info", "Display information about a VM", cmd_info)
 p_info.add_argument("vm_name", type=str, help="Name of VM")
 
