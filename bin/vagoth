@@ -79,7 +79,7 @@ def cmd_tree(args):
                 parents[node.parent.node_id].append(node)
             else:
                 parents[node.parent.node_id] = [node,]
-    for node in sorted(roots):
+    for node in sorted(roots, lambda x, y: cmp(x.name, y.name)):
         print_node_and_children(node, parents, indent=0)
 p_tree = make_subcommand("tree", "List all VMs as a tree", cmd_tree)
 

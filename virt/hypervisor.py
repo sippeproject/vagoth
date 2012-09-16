@@ -25,7 +25,7 @@ class Hypervisor(Node):
     @property
     def children(self):
         """Return the children of this hypervisor"""
-        return manager.get_nodes_with_parent(self._node_id)
+        return self._manager.get_nodes_with_parent(self._node_id)
 
     @property
     def driver(self):

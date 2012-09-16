@@ -61,7 +61,7 @@ class DictRegistry(object):
         try:
             return self.nodes[node_id]
         except KeyError:
-            raise exceptions.NodeNotFoundException("Node %s not found in registry" % (vm_name,))
+            raise exceptions.NodeNotFoundException("Node %s not found in registry" % (node_id,))
 
     def get_node_by_name(self, node_name):
         """Return a node doc for the node with the given node_name"""
@@ -143,15 +143,16 @@ class DictRegistry(object):
                 "metadata": metadata or {},
                 "tags": tags or [],
                 "unique_keys": unique_keys or [],
+                "parent": None,
             }
             namekey = "VAGOTH_NAME_%s" % node_name
             if namekey in self.unique:
                 raise exceptions.UniqueConstraintViolation("Node name already taken: %s" % (node_name,))
-            for key in unique_keys:
+            for key in (unique_keys or []):
                 if key in self.unique:
                     raise exceptions.UniqueConstraintViolation("Unique key is already taken: %s" % (key,))
             self.unique[namekey] = node_id
-            for key in unique_keys:
+            for key in (unique_keys or []):
                 self.unique[key] = node_id
             self.nodes[node_id] = node
             self._save()
