@@ -51,6 +51,12 @@ class Monitor(object):
         for vm_status in status:
             vm_name = vm_status["_name"]
             if vm_name == node.node_id:
+                # Update node's metadata based on node status
+                # FIXME: a little hacky
+                del vm_status["_name"]
+                del vm_status["_type"]
+                del vm_status["_parent"]
+                self.manager.registry.update_metadata(node.node_id, vm_status)
                 continue
             vms[vm_name] = vm_status
             vm_state, vm_target_state = vm_status["state"]
