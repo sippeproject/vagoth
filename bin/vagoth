@@ -3,6 +3,7 @@
 from vagoth.manager import get_manager
 from vagoth.transaction import Transaction
 from vagoth.exceptions import NodeNotFoundException
+import fnmatch
 import argparse
 import json
 import getpass
@@ -43,6 +44,11 @@ def make_subcommand(command, helptext, function):
 def cmd_list(args):
     global manager
     for node in sorted(manager.get_nodes()):
+        if args.name_glob:
+            glob = args.name_glob
+            if not glob.endswith("*"): glob = glob + "*"
+            if not fnmatch.fnmatch(node.name, glob):
+                continue
         if args.type and node.node_type != args.type:
             continue
         if args.tag and args.tag not in node.tags:
@@ -55,6 +61,7 @@ def cmd_list(args):
             node.name, node.state, node.node_type,
             assignment, ",".join(node.tags)))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
+p_list.add_argument("name_glob", type=str, help="Name glob/prefix", default=None, nargs='?')
 p_list.add_argument("--tag", type=str, help="Limit by tag", default=None)
 p_list.add_argument("--type", type=str, help="Limit by type", default=None)
 p_list.add_argument("--uniquekey", type=str, help="Limit by unique key", default=None)
