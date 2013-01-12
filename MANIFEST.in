@@ -1,0 +1,3 @@
+include LICENSE
+include bin/vagoth
+include vagoth/virt/utils/mc_json_rpc.rb
