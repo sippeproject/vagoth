@@ -3,8 +3,8 @@ Getting Started
 
 Vagoth is designed to be pluggable, and it doesn't come with defaults in the
 code.  This means that you have to create a configuration file before you
-start.  In etc/sippe/vagoth.conf.template you will find an example
-configuration file with sane defaults.
+start.  In examples/vagoth.conf you will find an example configuration
+file with sane defaults.
 
 
 Web interface
