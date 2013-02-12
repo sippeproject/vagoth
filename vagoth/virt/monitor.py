@@ -18,6 +18,7 @@
 #
 
 from .. import exceptions
+from exceptions import DriverException
 import logging
 
 class Monitor(object):
@@ -117,6 +118,7 @@ class Monitor(object):
             if driver:
                 try:
                     node_status = driver.status(node)
-                    self.update_node(node, node_status)
-                except: # FIXME
-                    raise
+                except DriverException as e:
+                    logging.info(e.message)
+                    continue
+                self.update_node(node, node_status)

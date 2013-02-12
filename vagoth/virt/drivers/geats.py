@@ -110,6 +110,8 @@ class GeatsMcollective(object):
     def status(self, node=None):
         """Request information about all VMs from the node"""
         res = self._call("status", node, timeout=5)
+        if len(res) == 0:
+            raise DriverException("No results received for %s" % (node))
         nodes = []
         for node in res:
             if node["statuscode"] == 0:
