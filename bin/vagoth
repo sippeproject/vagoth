@@ -139,9 +139,9 @@ def cmd_shutdown(args):
     vm = manager.get_node_by_name(args.vm_name)
     try:
         vm.shutdown()
-        status("shutdown", vm_name, "OK")
+        status("shutdown", args.vm_name, "OK")
     except:
-        fail("shutdown", vm_name, "unsupported action")
+        fail("shutdown", args.vm_name, "unsupported action")
 p_shutdown = make_subcommand("shutdown", "Politely stop a VM", cmd_shutdown)
 p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
 

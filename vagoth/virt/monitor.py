@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-from .. import exceptions
+import vagoth.exceptions
 from exceptions import DriverException
 import logging
 
@@ -46,6 +46,7 @@ class Monitor(object):
         )
         vm = self.manager.get_node(vm_name)
         self.manager.registry.set_parent(vm_name, node.node_id)
+        return vm
 
     def unassign_vm(self, vm):
         """
@@ -82,10 +83,9 @@ class Monitor(object):
             vm_state, vm_target_state = vm_status["state"]
             try:
                 vm = self.manager.get_node(vm_name)
-            except exceptions.NodeNotFoundException:
+            except vagoth.exceptions.NodeNotFoundException:
                 if self.create_missing:
-                    self.create_vm(vm_name, vm_status, node)
-                    vm = self.manager.get_node(vm_name)
+                    vm = self.create_vm(vm_name, vm_status, node)
                 else:
                     logging.warn("VM {0} not found. Skipping.".format(vm_name))
                     continue
