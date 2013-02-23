@@ -1,8 +1,33 @@
 #!/usr/bin/python
+#
+# Vagoth Cluster Management Framework
+# Copyright (C) 2013  Robert Thomson
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+#
+
+#
+# This command line tool works with the virtualisation types, plugins,
+# and actions to let you control a single cluster of VM (Virtual Machine)
+# and HV (Hypervisor) nodes.  It also serves as an example of how to use
+# the Vagoth framework.
+#
 
 from vagoth.manager import get_manager
 from vagoth.transaction import Transaction
-from vagoth.exceptions import NodeNotFoundException
+from vagoth.exceptions import NodeNotFoundException, ProvisioningException
 import fnmatch
 import argparse
 import json
@@ -23,10 +48,10 @@ manager = None
 p_global = argparse.ArgumentParser(add_help=True,
     formatter_class=argparse.RawTextHelpFormatter)
 p_global.add_argument("-v", "--verbose", action='store_true')
-p_global_subs = p_global.add_subparsers(title="subcommands", description="""Commands to manage VMs on Vagoth
+p_global_subs = p_global.add_subparsers(title="subcommands", description="""Commands to manage nodes in Vagoth
 
-A typical lifecycle is:
-  * new <vm_name> [k1=v1 ...] (provisioner adds new VM to cluster)
+A typical lifecycle of a VM would be:
+  * new <node_id> [--name=name] [--type=vm] [--tags=tag1,tag2] [k1=v1 ...] (make a new VM)
   * start <vm_name> (allocator assigns VM to node and starts it)
   * shutdown <vm_name> (polite shutdown of VM)
   * undefine <vm_name> (unassign VM from current HV)
@@ -76,11 +101,15 @@ def print_node_and_children(node, parents, indent=0):
 def cmd_tree(args):
     global manager
     roots = []
+    orphans = []
     parents = {}
     nodes = manager.get_nodes()
     for node in nodes:
         if node.parent is None:
-            roots.append(node)
+            if node.node_type == "hv":
+                roots.append(node)
+            else:
+                orphans.append(node)
         else:
             if node.parent.node_id in parents:
                 parents[node.parent.node_id].append(node)
@@ -88,6 +117,10 @@ def cmd_tree(args):
                 parents[node.parent.node_id] = [node,]
     for node in sorted(roots, lambda x, y: cmp(x.name, y.name)):
         print_node_and_children(node, parents, indent=0)
+    if len(orphans) > 0:
+        print("Orphans:")
+        for node in orphans:
+            print_node_and_children(node, {}, 1)
 p_tree = make_subcommand("tree", "List all VMs as a tree", cmd_tree)
 
 def cmd_listvm(args):
@@ -111,6 +144,7 @@ def fail(command, node_name, msg, exit_code=1):
     status(command, node_name, msg)
     sys.exit(exit_code)
 
+
 def cmd_start(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
@@ -119,9 +153,9 @@ def cmd_start(args):
         status("start", args.vm_name, "OK")
     except AttributeError:
         fail("start", args.vm_name, "unsupported action")
-        print("start: unsupported action ({0})".format(args.vm_name))
 p_start = make_subcommand("start", "Start a VM (& allocate if required)", cmd_start)
 p_start.add_argument("vm_name", type=str, help="Name of VM")
+
 
 def cmd_stop(args):
     global manager
@@ -134,6 +168,7 @@ def cmd_stop(args):
 p_stop = make_subcommand("stop", "Stop a VM", cmd_stop)
 p_stop.add_argument("vm_name", type=str, help="Name of VM")
 
+
 def cmd_shutdown(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
@@ -145,23 +180,25 @@ def cmd_shutdown(args):
 p_shutdown = make_subcommand("shutdown", "Politely stop a VM", cmd_shutdown)
 p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
 
+
 def cmd_info(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
-    print "# state:"
+    print("# state:")
     pprint(vm.state)
-    print "# parent:"
+    print("# parent:")
     pprint(vm.parent and vm.parent.name)
-    print "# definition:"
+    print("# definition:")
     pprint(vm.definition)
-    print "# metadata:"
+    print("# metadata:")
     pprint(vm.metadata)
-    print "# tags:"
+    print("# tags:")
     pprint(vm.tags)
-    print "# unique keys:"
+    print("# unique keys:")
     pprint(vm.unique_keys)
 p_info = make_subcommand("info", "Display information about a VM", cmd_info)
 p_info.add_argument("vm_name", type=str, help="Name of VM")
+
 
 def cmd_undefine(args):
     global manager
@@ -179,6 +216,7 @@ def cmd_undefine(args):
 p_undefine = make_subcommand("undefine", "Undefine VM from a node", cmd_undefine)
 p_undefine.add_argument("vm_name", type=str, help="Name of VM")
 
+
 def cmd_define(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
@@ -191,16 +229,18 @@ p_define = make_subcommand("define", "Define a VM on a node", cmd_define)
 p_define.add_argument("vm_name", type=str, help="Name of VM")
 p_define.add_argument("-H", "--hint", help="Optional hint for the VM allocation plugin")
 
+
 def cmd_provision(args):
     global manager
     vm = manager.get_node(args.vm_name)
     try:
         vm.provision()
-        print("provision: OK ({0})".format(args.vm_name))
+        status("provision", args.vm_name, "OK")
     except AttributeError:
-        print("provision: unsupported action ({0})".format(args.vm_name))
+        fail("provision", args.vm_name, "unsupported action")
 p_provision = make_subcommand("provision", "Provision a VM on a node (re-init first)", cmd_provision)
 p_provision.add_argument("vm_name", type=str, help="Name of VM")
+
 
 def cmd_deprovision(args):
     global manager
@@ -208,32 +248,53 @@ def cmd_deprovision(args):
     if vm.parent:
         try:
             vm.deprovision()
-            print("deprovision: OK ({0})".format(args.vm_name))
+            status("deprovision", args.vm_name, "OK")
         except AttributeError:
-            print("deprovision: unsupported action ({0})".format(args.vm_name))
+            fail("deprovision", args.vm_name, "unsupported action")
 p_deprovision = make_subcommand("deprovision", "Deprovision a VM on a node", cmd_deprovision)
 p_deprovision.add_argument("vm_name", type=str, help="Name of VM")
+
 
 def cmd_new(args):
     global manager
     definition = {}
-    for arg in args.kwargs:
+    for arg in args.kwarg:
+        if "=" not in arg:
+            fail("new", args.node_id, "Invalid keyword argument: {0}".format(arg))
         k,v = arg.split("=",1)
         definition[k] = v
-    manager.provisioner.provision(args.node_id,
-        node_type=args.node_type,
-        definition=definition)
+    if args.tags:
+        tags = args.tags.split(",")
+    else:
+        tags = []
+    try:
+        manager.provisioner.provision(args.node_id,
+            node_name=args.name or args.node_id,
+            node_type=args.type,
+            definition=definition,
+            tags = tags)
+        status("new", args.node_id, "OK")
+    except ProvisioningException as e:
+        fail("new", args.node_id, e.message)
 p_new = make_subcommand("new", "Create a new VM in the cluster", cmd_new)
 p_new.add_argument("node_id", type=str, help="Node ID")
-p_new.add_argument("node_type", type=str, help="Node Type")
-p_new.add_argument("kwargs", nargs="*", help="key=value arguments")
+p_new.add_argument("--name", type=str, help="Node name", default=None)
+p_new.add_argument("--type", type=str, help="Node type [vm]", default="vm")
+p_new.add_argument("--tags", type=str, help="Comma separated node tags", default=None)
+p_new.add_argument("kwarg", nargs="*", help="key=value arguments")
+
 
 def cmd_delete(args):
     global manager
-    vm = manager.get_node_by_name(args.vm_name)
-    manager.provisioner.deprovision(vm)
+    node = manager.get_node_by_name(args.node_name)
+    try:
+        manager.provisioner.deprovision(node.node_id)
+        status("delete", args.node_name, "OK")
+    except ProvisioningException as e:
+        fail("delete", args.node_name, e.message)
 p_delete = make_subcommand("delete", "Delete a node from the cluster (must not be assigned)", cmd_delete)
-p_delete.add_argument("vm_name", type=str, help="Name of VM")
+p_delete.add_argument("node_name", type=str, help="Name of VM")
+
 
 def cmd_rename(args):
     global manager
@@ -242,12 +303,13 @@ def cmd_rename(args):
 p_rename = make_subcommand("rename", "Rename a node (nice name only)", cmd_rename)
 p_rename.add_argument("old_name", type=str, help="Current name of VM")
 p_rename.add_argument("new_name", type=str, help="New name of VM")
-    
+
 
 def cmd_poll(args):
     global manager
     manager.action("vm_poll")
 p_poll = make_subcommand("poll", "Poll cluster for status", cmd_poll)
+
 
 if __name__ == '__main__':
     args = p_global.parse_args()
@@ -262,6 +324,8 @@ if __name__ == '__main__':
             except NodeNotFoundException as e:
                 if hasattr(args, "vm_name"):
                     fail(args._command, args.vm_name, "node not found")
+                elif hasattr(args, "node_name"):
+                    fail(args._command, args.node_name, "node not found")
                 else:
                     raise
         finally:
