@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IRegistry:
+class IRegistry(object):
     """
     The registry provides the data store for Vagoth.  It maintains
     nodes, their type, definition, metadata, tags, unique keys,
@@ -57,7 +57,7 @@ class IRegistry:
         Return the node with the given name of node_name
         """
 
-    def get_node_by_unique_key(key=None):
+    def get_node_by_key(key=None):
         """
         Return the node with given unique key
         """
@@ -76,7 +76,7 @@ class IRegistry:
     def get_nodes_with_tag(node_tag=None):
         """
         Returns an iterator, returning each node's dictionary (see get_node),
-        where the given tag 
+        where the given tag is set on the node.
         """
 
     def get_nodes_with_parent(node_parent=None):

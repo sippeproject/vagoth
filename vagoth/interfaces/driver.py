@@ -17,8 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IDriver:
-    def __init__(local_config, global_config):
+class IDriver(object):
+    def __init__(manager, config):
         """
         """
     def provision(node, vm):
