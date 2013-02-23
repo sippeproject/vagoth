@@ -81,7 +81,7 @@ class CouchRegistry(object):
         raise exceptions.NodeNotFoundException("Node with key {0} not found in registry.".format(key))
 
     def get_nodes_with_type(self, node_type=None):
-        "return list of nodes with type" 
+        "return list of nodes with type"
         # FIXME: inefficient
         for node_id in self.nodes:
             node = self.nodes[node_id]

@@ -71,7 +71,7 @@ class Transaction(object):
     def __init__(self, source=None, txid=None):
         self.source = source
         self.desired_txid = txid
-        
+
     def __enter__(self):
         global threadlocal
         self.txid = None

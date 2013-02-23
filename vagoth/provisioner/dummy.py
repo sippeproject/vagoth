@@ -48,7 +48,7 @@ class DummyProvisioner(object):
             tags = tags,
             unique_keys = unique_keys
         )
-            
+
     def deprovision(self, node_id):
         node = self.manager.registry.get_node(node_id) # throws NodeNotFoundException
         parent_node_id = node['parent']
