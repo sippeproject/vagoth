@@ -47,9 +47,16 @@ class Hypervisor(Node):
         return self._manager.get_nodes_with_parent(self._node_id)
 
     @property
+    def driver_name(self):
+        """Return the driver name for this hypervisor, or default"""
+        driver_name = self.definition.get('driver', 'default')
+        assert isinstance(driver_name, basestring)
+        return driver_name
+
+    @property
     def driver(self):
         """Return the driver for this hypervisor"""
-        return self._manager.config.make_factory("virt/driver", self._manager)
+        return self._manager.config.make_factory("virt/drivers/%s" % (self.driver_name,), self._manager)
 
     def __str__(self):
         return self.name
