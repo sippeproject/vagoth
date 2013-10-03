@@ -71,6 +71,13 @@ class Node(object):
         return self._doc['metadata']
 
     @property
+    def parent_id(self):
+        """The node id of the parent node of this one, if set"""
+        parentid = self._doc['parent']
+        if parentid:
+            return parentid
+
+    @property
     def parent(self):
         """The parent node of this one, if set"""
         parent = self._doc['parent']
