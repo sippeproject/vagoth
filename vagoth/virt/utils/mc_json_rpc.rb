@@ -43,7 +43,7 @@ end
 if ARGV[0] == "-"
     hash = JSON.load($stdin.read())
 else
-    open(ARGV[1]) do |fd|
+    open(ARGV[0]) do |fd|
         hash = JSON.load(fd.read())
     end
 end
