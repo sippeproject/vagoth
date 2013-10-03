@@ -19,7 +19,7 @@ virtual machines and containers.  The next layer around the core is therefore
 the virtualisation layer, which consists of several components:
 
 * VirtualMachine and Hypervisor classes
-* A pluggable driver to communicate with different hypervisors
+* Pluggable drivers to communicate with different hypervisors
 * A pluggable Allocator, to help decide on the best hypervisor/server for a VM.
 * A pluggable Monitor, which will poll the state of the cluster and update
   the registry with the latest information about the cluster.

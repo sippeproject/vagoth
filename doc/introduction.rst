@@ -2,11 +2,12 @@ Introduction
 ============
 
 Vagoth provides a cluster management framework that you can build upon to
-create interesting applications where you have the concept of `nodes` which
-have relationships to one another and a lifecycle which starts with
-provisioning and ends with deprovisioning.  What they do along the way is up to
-the specific implementation, but it can make use of a job scheduler and actions
-to perform tasks in the background.  Is that abstract enough for you?
+create interesting applications where you have the concept of `nodes` which can
+have relationships to one another, finite resources that must be tracked, and a
+lifecycle which starts with provisioning and ends with deprovisioning.  What
+they do along the way is up to the specific implementation, but it can make use
+of a job scheduler and actions to perform tasks in the background.  Is that
+abstract enough for you?
 
 A more concrete example is managing a cluster of virtual machines and the
 servers they run upon.  In fact, Vagoth comes with a set of components to do
