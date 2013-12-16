@@ -100,7 +100,7 @@ class test_CouchRegistry(unittest.TestCase):
             node_type="hv",
             node_name="node001.example.com",
             definition={ "name": "0xdeadbeef", "fqdn": "node001.example.com" },
-            tags=["tag1", "tag2"],
+            tags={"tag1":True, "tag2":"somevalue"},
             unique_keys=["node001_uniquekey"])
 
     def tearDown(self):
@@ -141,8 +141,8 @@ class test_CouchRegistry(unittest.TestCase):
         self.assertNotIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
 
     def test_change_tags(self):
-        self.registry.set_node("0xdeadbeef", tags=["vm"])
-        self.assertIn("vm", self.registry.nodes['0xdeadbeef']['tags'])
+        self.registry.set_node("0xdeadbeef", tags={"xyzzy":"xyzzy"})
+        self.assertIn("xyzzy", self.registry.nodes['0xdeadbeef']['tags'])
 
     def test_change_keys(self):
         self.registry.set_node("0xdeadbeef", unique_keys=["MASTER"])
@@ -159,8 +159,13 @@ class test_CouchRegistry(unittest.TestCase):
         node = self.registry.get_node_by_key("node001_uniquekey")
         self.assertEqual(node['node_id'], '0xdeadbeef')
 
-    def test_get_nodes_with_tag(self):
-        nodes = list(self.registry.get_nodes_with_tag("tag1"))
+    def test_get_nodes_with_tags_existence(self):
+        nodes = list(self.registry.get_nodes_with_tags({"tag1": None}))
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
+
+    def test_get_nodes_with_tags_value(self):
+        nodes = list(self.registry.get_nodes_with_tags({"tag2": "somevalue"}))
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
 

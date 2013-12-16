@@ -106,11 +106,23 @@ class DictRegistry(object):
             if node['type'] == node_type:
                 yield node
 
-    def get_nodes_with_tag(self, node_tag=None):
-        """Return an iterable of node docs with the given tag"""
+    def get_nodes_with_tags(self, tag_matches):
+        """Return an iterable of node docs with the given tag
+
+        @param tag_matches: key/value pairs to match. If the value is None,
+            check for key existence only.
+        @returns: iterable of node dict's
+        """
         self._load()
         for node in self.nodes.itervalues():
-            if node_tag in node.get('tags',[]):
+            tags = node.get('tags', {})
+            if type(tags) == list:
+                tags = dict([(x,True) for x in tags])
+            for tag_name, tag_value in tag_matches.items():
+                if tag_name not in tags:
+                    continue
+                if tag_value is not None and tag_value != tags[tag_name]:
+                    continue
                 yield node
 
     def get_nodes_with_parent(self, node_parent=None):

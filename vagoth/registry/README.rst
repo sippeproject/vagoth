@@ -17,7 +17,7 @@ Rules
 
 A node stores the representation of a system, whether physical or virtual.
 
-A node has a type, a system id, a name, a definition, a state, metadata,
+A node has a type, a system id, a name, a definition, a state, metadata, tags,
 relationships in the form of one parent but many children, and a set of unique
 keys.
 
@@ -60,6 +60,11 @@ Metadata
     information with a node.  Each key in metadata should be namespaced,
     so as not to conflict with other keys in the component system. Vagoth
     uses VAGOTH\_ for its key prefix.
+
+Tags
+    Key/Value pairs can be associated with a node.  The purpose is to store
+    end-user configurable information that doesn't directly affect the
+    running node.
 
 Parent
     This is either set to None, or to another Node.

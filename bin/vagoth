@@ -51,7 +51,7 @@ p_global.add_argument("-v", "--verbose", action='store_true')
 p_global_subs = p_global.add_subparsers(title="subcommands", description="""Commands to manage nodes in Vagoth
 
 A typical lifecycle of a VM would be:
-  * new <node_id> [--name=name] [--type=vm] [--tags=tag1,tag2] [k1=v1 ...] (make a new VM)
+  * new <node_id> [--name=name] [--type=vm] [--tags a=b c=d] -- [k1=v1 ...] (make a new VM)
   * start <vm_name> (allocator assigns VM to node and starts it)
   * shutdown <vm_name> (polite shutdown of VM)
   * undefine <vm_name> (unassign VM from current HV)
@@ -62,11 +62,44 @@ A typical lifecycle of a VM would be:
 # helper function to create a subcommand with argparse
 def make_subcommand(command, helptext, function):
     global p_global_subs
-    parser = p_global_subs.add_parser(command, help=helptext)
+    epilog = function.__doc__
+    if epilog:
+        # FIXME: nicer way to strip but still support indenting?
+        epilog = epilog.strip().replace("\n    ","\n")
+    parser = p_global_subs.add_parser(command, help=helptext,
+                                      description=helptext, epilog=epilog,
+                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.set_defaults(func=function, _command=command)
+    # always add --verbose to subcommands too
+    parser.add_argument("-v", "--verbose", action='store_true')
     return parser
 
+def _format_tags(tags):
+    """Given a dictionary of user tags, return them formatted for display"""
+    assert type(tags) == dict
+    out = []
+    for k,v in sorted(tags.items()):
+        if v in (True, None):
+            out.append(k)
+        else:
+            out.append("{0}=\"{1}\"".format(k,v.replace('"', '\\"')))
+    return " ".join(out)
+
 def cmd_list(args):
+    """List all VMs managed by Vagoth, with filtering.
+
+    eg. to list all nodes with a brief summary:
+        $ vagoth list
+    eg. to list all running VMs:
+        $ vagoth list --state running
+    eg. to only list nodes whose name starts with myprefix:
+        $ vagoth list myprefix
+    eg. to list all 'vm' type nodes with tags mytag1=x and mybooleantag exists, and
+        with a name prefix of 'myprefix'
+        $ vagoth list --type vm --tags mytag1=x mybooleantag -- myprefix
+    eg. list the VM with the uniquekey of ip_192.168.1.1
+        $ vagoth list --uniquekey ip_192.168.1.1
+    """
     global manager
     node_dict = dict([(node.node_id, node) for node in manager.get_nodes()])
     for node in sorted(node_dict.values()):
@@ -77,23 +110,34 @@ def cmd_list(args):
                 continue
         if args.type and node.node_type != args.type:
             continue
-        if args.tag and args.tag not in node.tags:
-            continue
+        if args.tags:
+            tag_matches = {}
+            for tag in args.tags:
+                if "=" in tag:
+                    tag_name,tag_value = tag.split("=",1)
+                    tag_matches[tag_name] = tag_value
+                else:
+                    tag_matches[tag] = None
+            if not node.matches_tags(tag_matches):
+                continue
         if args.uniquekey and args.uniquekey not in node.unique_keys:
             continue
         if args.state and node.state != args.state:
             continue
         parent_id = node.parent_id
         assignment = parent_id and node_dict[parent_id].name or ""
-        print("{0:<15}  state={1:<10}  type={2:<2}  parent={3:<12}  tags={4}".format(
+        nicetags = _format_tags(node.tags)
+        if nicetags:
+            nicetags = "  tags=("+nicetags+")"
+        print("{0:<15}  state={1:<10}  type={2:<2}  parent={3:<12}{4}".format(
             node.name, node.state, node.node_type,
-            assignment, ",".join(node.tags)))
+            assignment, nicetags))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
 p_list.add_argument("name_glob", type=str, help="Name glob/prefix", default=None, nargs='?')
-p_list.add_argument("--tag", type=str, help="Limit by tag", default=None)
-p_list.add_argument("--type", type=str, help="Limit by type", default=None)
-p_list.add_argument("--uniquekey", type=str, help="Limit by unique key", default=None)
-p_list.add_argument("--state", type=str, help="Limit by node state", default=None)
+p_list.add_argument("--tags", "-t", type=str, nargs="*", help="Limit by tag (key=value, or just key)", default=None)
+p_list.add_argument("--type", "-T", type=str, help="Limit by type", default=None)
+p_list.add_argument("--uniquekey", "-k", type=str, help="Limit by unique key", default=None)
+p_list.add_argument("--state", "-s", type=str, help="Limit by node state", default=None)
 
 def print_node_and_children(node, parents, indent=0):
     global manager
@@ -268,10 +312,13 @@ def cmd_new(args):
             fail("new", args.node_id, "Invalid keyword argument: {0}".format(arg))
         k,v = arg.split("=",1)
         definition[k] = v
-    if args.tags:
-        tags = args.tags.split(",")
-    else:
-        tags = []
+    tags = {}
+    for tag in args.tags:
+        if "=" in tag:
+            k,v = tag.split("=",1)
+            tags[k] = v
+        else:
+            tags[tag] = True
     try:
         manager.provisioner.provision(args.node_id,
             node_name=args.name or args.node_id,
@@ -285,7 +332,7 @@ p_new = make_subcommand("new", "Create a new VM in the cluster", cmd_new)
 p_new.add_argument("node_id", type=str, help="Node ID")
 p_new.add_argument("--name", type=str, help="Node name", default=None)
 p_new.add_argument("--type", type=str, help="Node type [vm]", default="vm")
-p_new.add_argument("--tags", type=str, help="Comma separated node tags", default=None)
+p_new.add_argument("--tags", type=str, nargs="*", help="key=value format node tags", default=None)
 p_new.add_argument("kwarg", nargs="*", help="key=value arguments")
 
 

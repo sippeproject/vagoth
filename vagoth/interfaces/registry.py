@@ -73,10 +73,10 @@ class IRegistry(object):
         if node_type is the same.
         """
 
-    def get_nodes_with_tag(node_tag=None):
+    def get_nodes_with_tags(tag_matches=None):
         """
         Returns an iterator, returning each node's dictionary (see get_node),
-        where the given tag is set on the node.
+        where the given tags are set for the node.
         """
 
     def get_nodes_with_parent(node_parent=None):

@@ -27,7 +27,7 @@ class Node(object):
         definition - a dict
         metadata - a dict
         parent - None, or the node_id of the parent Node
-        tags - list of strings
+        tags - dict of string keys matching string value
         unique_keys - list of strings
 
     It exposes all of the above as attributes for reading.
@@ -86,8 +86,11 @@ class Node(object):
 
     @property
     def tags(self):
-        """List of all tags for this node"""
-        return list(self._doc['tags'])
+        """Dict of all tags for this node"""
+        tags = self._doc.get('tags', {})
+        if type(tags) == list:
+            tags = dict([(x,True) for x in tags])
+        return tags
 
     @property
     def unique_keys(self):
@@ -108,3 +111,18 @@ class Node(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def matches_tags(self, tag_matches):
+        """Does this node match the given tags?
+
+        For each key/value pair, check if the tag exists, and if the value is
+        not None, if the value matches.
+        """
+        assert tag_matches # shouldn't be empty
+        tags = self.tags
+        for tag_name, tag_value in tag_matches.items():
+            if tag_name not in tags:
+                return False
+            if tag_value is not None and tag_value != tags[tag_name]:
+                return False
+        return True

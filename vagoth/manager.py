@@ -76,10 +76,13 @@ class Manager(object):
         for nodedoc in self.registry.get_nodes_with_type(node_type):
             yield self._instantiate_node(nodedoc)
 
-    def get_nodes_with_tag(self, node_tag):
-        """Return an iterable of all nodes with the given tag"""
-        for nodedoc in self.registry.get_nodes_with_tag(node_tag):
-            yield self._instantiate_node(nodedoc)
+    def get_nodes_with_tags(self, tag_matches):
+        """
+        Return an iterable of all nodes with matching tags
+        """
+        if tagdict:
+            for nodedoc in self.registry.get_nodes_with_tags(tag_matches):
+                yield self._instantiate_node(nodedoc)
 
     def get_nodes_with_parent(self, node_parent):
         """Return an iterable of all nodes with the given parent node"""

@@ -23,7 +23,7 @@ new: OK (devnode1)
 
 # list the new node.  It doesn't yet have a state or a parent assigned.
 $ vagoth list devnode1
-devnode1    state=unknown    type=vm  parent=         tags=
+devnode1    state=unknown    type=vm  parent=
 
 # Call devnode1.start(), which triggers the 'start' action. It also
 # sees that it's not defined (deployed) anywhere yet, so it calls the
@@ -35,14 +35,14 @@ start: OK (devnode1)
 
 # The action has set the state 'starting'
 $ vagoth list devnode1
-devnode1    state=starting    type=vm  parent=hyper1  tags=
+devnode1    state=starting    type=vm  parent=hyper1
 
 # Call the monitor plugin to poll all the hv nodes for the latest state.
 $ vagoth poll 
 
 # It picked up the new running state
 $ vagoth list devnode1
-devnode1    state=running    type=vm  parent=hyper1   tags=
+devnode1    state=running    type=vm  parent=hyper1
 
 $ ssh root@devnode1
 root@devnode1:~# ip route ls
@@ -64,7 +64,7 @@ vagoth: txid=d01ca1bc source=myuser action=deprovision vm=devnode1
 deprovision: OK (devnode1)
 
 $ vagoth list devnode1
-devnode1         state=unassigned  type=vm  parent=   tags=
+devnode1         state=unassigned  type=vm  parent=
 
 $ vagoth delete devnode1
 delete: OK (devnode1)
