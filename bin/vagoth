@@ -313,7 +313,7 @@ def cmd_new(args):
         k,v = arg.split("=",1)
         definition[k] = v
     tags = {}
-    for tag in args.tags:
+    for tag in args.tags or []:
         if "=" in tag:
             k,v = tag.split("=",1)
             tags[k] = v
