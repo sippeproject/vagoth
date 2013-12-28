@@ -23,6 +23,7 @@
 
 import couchdb
 from .. import exceptions
+from nodedoc import NodeDoc
 
 class CouchRegistry(object):
     """
@@ -52,7 +53,7 @@ class CouchRegistry(object):
 
     def get_nodes(self):
         for node_id in self.nodes:
-            yield self.nodes[node_id]
+            yield NodeDoc(self, self.nodes[node_id])
 
     def __contains__(self, node_id):
         return node_id in self.nodes
@@ -61,7 +62,7 @@ class CouchRegistry(object):
         "return dict for node"
         node = self.nodes.get(node_id, None)
         if node:
-            return node
+            return NodeDoc(self, node)
         raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
 
     def get_node_by_name(self, name):
@@ -70,14 +71,14 @@ class CouchRegistry(object):
         if key in self.unique:
             node_id = self.unique[key]['node_id']
             if node_id in self.nodes:
-                return self.nodes[node_id]
+                return NodeDoc(self, self.nodes[node_id])
         raise exceptions.NodeNotFoundException("Node with name {0} not found in registry.".format(name))
 
     def get_node_by_key(self, key=None):
         "return the node with given unique key"
         if key and key in self.unique:
             node_id = self.unique[key]['node_id']
-            return self.nodes.get(node_id, None)
+            return NodeDoc(self, self.nodes.get(node_id, None))
         raise exceptions.NodeNotFoundException("Node with key {0} not found in registry.".format(key))
 
     def get_nodes_with_type(self, node_type=None):
@@ -86,14 +87,14 @@ class CouchRegistry(object):
         for node_id in self.nodes:
             node = self.nodes[node_id]
             if node['type'] == node_type:
-                yield node
+                yield NodeDoc(self, node)
 
     def get_nodes_with_tags(self, tag_matches):
         """return nodes with matching tags
 
-        @param tag_matches: key/value pairs to match. If the value is None,
+        :param tag_matches: key/value pairs to match. If the value is None,
             check for key existence only.
-        @returns: iterable of node dict's
+        :returns: iterable of node dict's
         """
         # FIXME: inefficient
         for node_id in self.nodes:
@@ -106,7 +107,7 @@ class CouchRegistry(object):
                     continue
                 if tag_value is not None and tag_value != tags[tag_name]:
                     continue
-                yield node
+                yield NodeDoc(self, node)
 
     def get_nodes_with_parent(self, parent=None):
         "return list of nodes with given parent"
@@ -114,7 +115,7 @@ class CouchRegistry(object):
         for node_id in self.nodes:
             node = self.nodes[node_id]
             if node.get('parent', None) == parent:
-                yield node
+                yield NodeDoc(self, node)
 
     def set_parent(self, node_id, parent_node_id):
         """Set parent_node_id atomically, and don't overwrite another"""
@@ -310,7 +311,9 @@ class CouchRegistry(object):
 
         In this implementation, we store blobs as part of the node doc.
         """
-        node = self.get_node(node_id)
+        node = self.nodes.get(node_id, None)
+        if not node:
+            raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
         blobs = node.get("blobs", {})
         return blobs.get(key, None)
 

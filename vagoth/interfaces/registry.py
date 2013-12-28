@@ -21,7 +21,7 @@ class IRegistry(object):
     """
     The registry provides the data store for Vagoth.  It maintains
     nodes, their type, definition, metadata, tags, unique keys,
-    and whether they have a parent.  It lets you add new nodes,
+    blobs, and whether they have a parent.  It lets you add new nodes,
     change node attributes, and atomically set the parent and
     update metadata.
     """
@@ -36,53 +36,51 @@ class IRegistry(object):
         """
 
     def get_node(node_id):
-        """
-        Return a dictionary of a single node's data.
+        """Return the node identified by node_id
 
-        For example:
-        {
-            "node_id": "node001",
-            "name": "nice node name",
-            "type": "vm",
-            "definition": { ... node definition ... },
-            "metadata": { ... node metadata ... },
-            "keys": [ "ip-1.2.3.4", "mac-aa:bb:cc:dd:ee:ff", "storage-nfs-VMS1/node001" ],
-            "tags": [ "user-foobar" ]
-            "parent": None,
-        }
+        :param node_id: node identifier
+        :returns: INodeDoc
         """
 
     def get_node_by_name(node_name):
-        """
-        Return the node with the given name of node_name
+        """Return an the node with the name of node_name
+
+        :param node_name: human-friendly (but still unique) name of node
+        :returns: INodeDoc
         """
 
-    def get_node_by_key(key=None):
-        """
-        Return the node with given unique key
+    def get_node_by_key(unique_key=None):
+        """Return the node with the given unique key
+
+        :param unique_key: unique key to search for
+        :returns: INodeDoc
         """
 
     def get_nodes():
         """
-        Returns an iterator returning each node's dictionary (see get_node)
+        Returns all nodes
+        :returns: Iterable of INodeDoc's
         """
 
     def get_nodes_with_type(node_type=None):
-        """
-        Returns an iterator, returning each node's dictionary (see get_node)
-        if node_type is the same.
+        """Return all nodes with a matching type
+
+        :param node_type: node type to match
+        :returns: Iteratable of INodeDoc's
         """
 
     def get_nodes_with_tags(tag_matches=None):
-        """
-        Returns an iterator, returning each node's dictionary (see get_node),
-        where the given tags are set for the node.
+        """Returns all nodes which match the given tags
+
+        :param tag_matches: dict of key-value pairs that must match
+        :returns: Iterable of INodeDoc's
         """
 
     def get_nodes_with_parent(node_parent=None):
-        """
-        Returns an iterator, returning each node's dictionary (see get_node),
-        where the given node has a parent of node_parent
+        """Returns all node who have the given parent
+
+        :param node_parent: parent's node id
+        :returns: Iterable of INodeDoc's
         """
 
     def set_parent(node_id, parent_node_id):

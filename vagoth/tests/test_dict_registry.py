@@ -68,26 +68,26 @@ class testDictRegistry(unittest.TestCase):
 
     def test_get_node_by_name(self):
         node = self.registry.get_node_by_name("node001.example.com")
-        self.assertEqual(node['node_id'], '0xdeadbeef')
+        self.assertEqual(node.id, '0xdeadbeef')
 
     def test_get_node_by_key(self):
         node = self.registry.get_node_by_key("node001_uniquekey")
-        self.assertEqual(node['node_id'], '0xdeadbeef')
+        self.assertEqual(node.id, '0xdeadbeef')
 
     def test_get_nodes_with_tags_existence(self):
         nodes = list(self.registry.get_nodes_with_tags({"tag1":None}))
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
+        self.assertEqual(nodes[0].id, '0xdeadbeef')
 
     def test_get_nodes_with_tags_value(self):
         nodes = list(self.registry.get_nodes_with_tags({"tag2":"somevalue"}))
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
+        self.assertEqual(nodes[0].id, '0xdeadbeef')
 
     def test_get_nodes_with_type(self):
         nodes = list(self.registry.get_nodes_with_type("hv"))
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
+        self.assertEqual(nodes[0].id, '0xdeadbeef')
 
     def test_set_parent(self):
         self.registry.nodes['othernode'] = {}
@@ -99,7 +99,7 @@ class testDictRegistry(unittest.TestCase):
         self.registry.set_parent('0xdeadbeef', 'othernode')
         nodes = list(self.registry.get_nodes_with_parent("othernode"))
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0]['node_id'], '0xdeadbeef')
+        self.assertEqual(nodes[0].id, '0xdeadbeef')
 
     def test_list_nodes(self):
         nodes = self.registry.list_nodes()

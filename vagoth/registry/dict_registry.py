@@ -28,6 +28,7 @@ A different lock can passed in as an extra argument.
 """
 
 from .. import exceptions
+from nodedoc import NodeDoc
 from threading import RLock
 
 class DictRegistry(object):
@@ -72,7 +73,7 @@ class DictRegistry(object):
         """Return a list of all node_id"""
         return self.nodes.keys()
 
-    def get_node(self, node_id):
+    def _get_node(self, node_id):
         """Return a node doc for the given node_id"""
         self._load()
         try:
@@ -80,38 +81,41 @@ class DictRegistry(object):
         except KeyError:
             raise exceptions.NodeNotFoundException("Node %s not found in registry" % (node_id,))
 
+    def get_node(self, node_id):
+        return NodeDoc(self._get_node(node_id))
+
     def get_node_by_name(self, node_name):
         """Return a node doc for the node with the given node_name"""
         self._load()
         for node in self.nodes.itervalues():
             if node.get('name', None) == node_name:
-                return node
+                return NodeDoc(self, node)
 
     def get_node_by_key(self, key=None):
         """Return a node doc for the node with the given key"""
         self._load()
         for node in self.nodes.itervalues():
             if key in node.get('unique_keys', []):
-                return node
+                return NodeDoc(self, node)
 
     def get_nodes(self):
         """Return an iterable of node docs"""
         self._load()
-        return self.nodes.values()
+        return map(NodeDoc, self.nodes.values())
 
     def get_nodes_with_type(self, node_type=None):
         """Return an iterable of node docs with the given type"""
         self._load()
         for node in self.nodes.itervalues():
             if node['type'] == node_type:
-                yield node
+                yield NodeDoc(self, node)
 
     def get_nodes_with_tags(self, tag_matches):
         """Return an iterable of node docs with the given tag
 
-        @param tag_matches: key/value pairs to match. If the value is None,
+        :param tag_matches: key/value pairs to match. If the value is None,
             check for key existence only.
-        @returns: iterable of node dict's
+        :returns: iterable of node dict's
         """
         self._load()
         for node in self.nodes.itervalues():
@@ -123,14 +127,14 @@ class DictRegistry(object):
                     continue
                 if tag_value is not None and tag_value != tags[tag_name]:
                     continue
-                yield node
+                yield NodeDoc(self, node)
 
     def get_nodes_with_parent(self, node_parent=None):
         """Return an iterable of node docs with the given parent id"""
         self._load()
         for node in self.nodes.itervalues():
             if node.get('parent', None) == node_parent:
-                yield node
+                yield NodeDoc(self, node)
 
     def set_parent(self, node_id, parent_node_id):
         """
@@ -247,7 +251,7 @@ class DictRegistry(object):
 
     def get_blob(self, node_id, key):
         """Return the blob for the given node_id and key, or None"""
-        node = self.get_node(node_id)
+        node = self._get_node(node_id)
         blobs = node.get("blobs", {})
         return blobs.get(key, None)
 

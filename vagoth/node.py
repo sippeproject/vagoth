@@ -21,7 +21,10 @@ class Node(object):
     """
     A Node represents a node entry in the Registry.
 
-    The node_doc dict it receives should contain the following keys:
+    Node is an extensible wrapper for an INodeDoc instance, which is
+    a read-only snapshot of a node from the registry.
+
+    The following attributes are exposed:
         node_id - same as node_id passed in
         name - a string
         definition - a dict
@@ -30,14 +33,17 @@ class Node(object):
         tags - dict of string keys matching string value
         unique_keys - list of strings
 
-    It exposes all of the above as attributes for reading.
-
     No setter's are provided for the above, as it's expected that you'll
-    inherit this class and provide any methods you require there.
+    inherit this class and provide any methods that you require there.
     """
-    def __init__(self, manager, node_id, node_doc):
+    def __init__(self, manager, node_doc):
+        """
+        @param manager: vagoth.manager.Manager instance
+        @param node_id: ID of node
+        @param node_doc: must implement INodeDoc
+        """
         self._manager = manager
-        self._node_id = node_id
+        self._node_id = node_doc.id
         self._doc = node_doc
 
     def refresh(self):
@@ -53,49 +59,46 @@ class Node(object):
     @property
     def node_type(self):
         """The immutable type of this node"""
-        return self._doc['type']
+        return self._doc.type
 
     @property
     def name(self):
         """The unique but mutable name of this node"""
-        return self._doc['name']
+        return self._doc.name
 
     @property
     def definition(self):
         """The definition dictionary"""
-        return self._doc['definition']
+        return self._doc.definition
 
     @property
     def metadata(self):
         """The metadata dictionary"""
-        return self._doc['metadata']
+        return self._doc.metadata
 
     @property
     def parent_id(self):
         """The node id of the parent node of this one, if set"""
-        parentid = self._doc['parent']
-        if parentid:
-            return parentid
+        parent_id = self._doc.parent
+        if parent_id:
+            return parent_id
 
     @property
     def parent(self):
         """The parent node of this one, if set"""
-        parent = self._doc['parent']
-        if parent:
-            return self._manager.get_node(parent)
+        parent_id = self._doc.parent
+        if parent_id:
+            return self._manager.get_node(parent_id)
 
     @property
     def tags(self):
         """Dict of all tags for this node"""
-        tags = self._doc.get('tags', {})
-        if type(tags) == list:
-            tags = dict([(x,True) for x in tags])
-        return tags
+        return self._doc.tags
 
     @property
     def unique_keys(self):
         """List of all unique keys for this node"""
-        return list(self._doc['unique_keys'])
+        return list(self._doc.unique_keys)
 
     def __str__(self):
         return self.name

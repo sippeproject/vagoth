@@ -45,11 +45,11 @@ class Manager(object):
 
     def _instantiate_node(self, nodedoc):
         if nodedoc:
-            node_factory = self.config.get_node_factory(nodedoc['type'])
+            node_factory = self.config.get_node_factory(nodedoc.type)
             if node_factory:
-                return node_factory(self, nodedoc['node_id'], nodedoc)
+                return node_factory(self, nodedoc)
             else:
-                raise exceptions.UnknownNodeType("Unknown node type: %r" % (nodedoc['type']))
+                raise exceptions.UnknownNodeType("Unknown node type: %r" % (nodedoc.type))
 
     def get_node(self, node_id):
         """Return the node instance for this node_id"""

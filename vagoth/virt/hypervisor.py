@@ -26,19 +26,16 @@ class Hypervisor(Node):
     It inherits vagoth.Node_
     """
 
-    def __init__(self, manager, node_id, node_doc):
-        super(Hypervisor, self).__init__(manager, node_id, node_doc)
-
     # FIXME, duplicated in VirtualMachine (but not really a Node thing)
     @property
     def state(self):
         """Retrieve the state attribute from the metadata"""
-        return self._doc['metadata'].get('state', 'unknown')
+        return self._doc.metadata.get('state', 'unknown')
 
     @state.setter
     def state(self, state):
         """Set the state attribute in the metadata"""
-        self._manager.registry.update_metadata(self.node_id, { "state": state, })
+        self._doc.registry.update_metadata(self.node_id, { "state": state, })
         self.refresh()
 
     @property
