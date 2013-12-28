@@ -228,7 +228,7 @@ class CouchRegistry(object):
                 doc['_rev'] = newdoc['_rev']
         raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
 
-    def set_node(self, node_id, node_name=None, definition=None, metadata=None, unique_keys=None, tags=None):
+    def set_node(self, node_id, node_name=None, definition=None, metadata=None, unique_keys=None, tags=None, **blobs):
         """Change an existing node definition"""
         try:
             doc = self.nodes[node_id]
@@ -257,6 +257,16 @@ class CouchRegistry(object):
                 if new_name_key:
                     self._claim_unique_keys(node_id, [], [new_name_key])
                 raise
+        if blobs:
+            if "blobs" not in doc:
+                doc["blobs"] = {}
+            for k,v in blobs.items():
+                if v is None:
+                    if k in doc["blobs"]:
+                        del doc["blobs"][k]
+                else:
+                    doc["blobs"][k] = v
+            doc["blobs"] = blobs
         self._force_node_save(doc)
         if old_name_key:
             del self.unique[old_name_key]
@@ -274,6 +284,35 @@ class CouchRegistry(object):
             self.nodes.save(doc)
         except couchdb.http.ResourceConflict as e:
             raise exceptions.RegistryException(*e.args)
+
+    def set_blob(self, node_id, key, value):
+        """Set a blob for the given node_id and key to the given value
+
+        In this implementation, we store blobs as part of the node doc.
+        """
+        try:
+            doc = self.nodes[node_id]
+        except couchdb.http.ResourceNotFound:
+            raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
+        if not doc.has_key("blobs"):
+            doc["blobs"] = {}
+        if value is None and key in doc["blobs"]:
+            del doc["blobs"][key]
+        else:
+            doc["blobs"][key] = value
+        try:
+            self.nodes.save(doc)
+        except couchdb.http.ResourceConflict as e:
+            raise exceptions.RegistryException(*e.args)
+
+    def get_blob(self, node_id, key):
+        """Return the blob for the given node_id and key, or None
+
+        In this implementation, we store blobs as part of the node doc.
+        """
+        node = self.get_node(node_id)
+        blobs = node.get("blobs", {})
+        return blobs.get(key, None)
 
     def delete_node(self, node_id):
         """Delete the node identified by node_id"""

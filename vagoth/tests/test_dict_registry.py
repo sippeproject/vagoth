@@ -124,3 +124,13 @@ class testDictRegistry(unittest.TestCase):
         self.assertNotIn("one", self.registry.nodes['0xdeadbeef']['metadata'])
         # ..but not all keys
         self.assertIn("three", self.registry.nodes['0xdeadbeef']['metadata'])
+
+    def test_blobs(self):
+        mydict = {"mykey": "myvalue"}
+        self.registry.set_blob("0xdeadbeef", "blob_one", "one")
+        self.registry.set_blob("0xdeadbeef", "blob_two", 2)
+        self.registry.set_blob("0xdeadbeef", "blob_dict", mydict)
+        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_one"), "one")
+        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_two"), 2)
+        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_dict"), mydict)
+        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_unset"), None)

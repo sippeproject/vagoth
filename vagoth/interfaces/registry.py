@@ -118,6 +118,21 @@ class IRegistry(object):
         method.
         """
 
+    def set_blob(node_id, key, value):
+        """
+        Set a blob for the given node_id and (string) key to value.
+
+        Blobs are undefined types, and may be stored separately to
+        the rest of the node metadata in a given registry implementation.
+
+        It's recommended to use 'metadata' instead, if it makes sense.
+        """
+
+    def get_blob(node_id, key):
+        """
+        Return the blob for the given node_id and (string) key.
+        """
+
     def __contains__(node_id):
         """
         A shortcut to see if the given node is in the registry

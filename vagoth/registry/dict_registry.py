@@ -229,6 +229,28 @@ class DictRegistry(object):
                 node["name"] = node_name
             self._save()
 
+    def set_blob(self, node_id, key, value):
+        """Set a blob for the given node_id and key to the given value"""
+        with self.lock:
+            self._load()
+            try:
+                node = self.nodes[node_id]
+            except KeyError:
+                raise exceptions.NodeNotFoundException("Node not found: %s" % (node_id,))
+            if not node.has_key("blobs"):
+                node["blobs"] = {}
+            if value is None and key in node["blobs"]:
+                del node["blobs"][key]
+            else:
+                node["blobs"][key] = value
+            self._save()
+
+    def get_blob(self, node_id, key):
+        """Return the blob for the given node_id and key, or None"""
+        node = self.get_node(node_id)
+        blobs = node.get("blobs", {})
+        return blobs.get(key, None)
+
     def update_metadata(self, node_id, extra_metadata, delete_keys=None):
         """Atomically update the metadata dict, or delete keys from it"""
         with self.lock:
