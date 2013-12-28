@@ -26,6 +26,7 @@ from ..registry.couch_registry import CouchRegistry
 import uuid
 import couchdb
 from .. import exceptions
+from registry_mixin import RegistryMixin
 
 rev_counter = 0
 
@@ -87,7 +88,7 @@ class CouchServer:
     def __getitem__(self, table_name):
         return CouchTableMock()
 
-class test_CouchRegistry(unittest.TestCase):
+class test_CouchRegistry(unittest.TestCase, RegistryMixin):
     def setUp(self):
         self.tmp_Server = couchdb.Server
         couchdb.Server = CouchServer
@@ -96,21 +97,13 @@ class test_CouchRegistry(unittest.TestCase):
             "couch_nodes_table": "vagoth/nodes",
             "couch_unique_table": "vagoth/nodes",
         })
-        self.registry.add_node("0xdeadbeef",
-            node_type="hv",
-            node_name="node001.example.com",
-            definition={ "name": "0xdeadbeef", "fqdn": "node001.example.com" },
-            tags={"tag1":True, "tag2":"somevalue"},
-            unique_keys=["node001_uniquekey"])
+        self.mixin_setUp()
 
     def tearDown(self):
         # restore sanity to the world
         couchdb.Server = self.tmp_Server
 
-    def test_contains(self):
-        self.assertIn("0xdeadbeef", self.registry)
-
-    def test_claim_unique_keys(self):
+    def test_couch_claim_unique_keys(self):
         self.registry._claim_unique_keys("0x1", ["NEW"])
         self.assertEqual(len(self.registry.unique.data), 3)
         self.assertIn("NEW", self.registry.unique.data)
@@ -121,99 +114,15 @@ class test_CouchRegistry(unittest.TestCase):
         self.assertIn("NEWER", self.registry.unique.data)
         self.assertEqual(self.registry.unique.data["NEWER"]["node_id"], "0x1")
 
-    def test_claim_unique_keys_with_conflict(self):
+    def test_couch_claim_unique_keys_with_conflict(self):
         self.registry._claim_unique_keys("0x1", ["NEW"])
         self.assertRaises(exceptions.UniqueConstraintViolation,
             self.registry._claim_unique_keys, "0x2", ["NEW"])
         self.assertEqual(self.registry.unique.data["NEW"]["node_id"], "0x1")
 
-    def test_initial_object(self):
+    def test_couch_couch_initial_object(self):
         self.assertEqual(len(self.registry.nodes.data), 1)
         self.assertTrue("0xdeadbeef" in self.registry.nodes.data)
         self.assertEqual(len(self.registry.unique.data), 2)
         self.assertIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
         self.assertIn("node001_uniquekey", self.registry.unique)
-
-    def test_change_name(self):
-        self.registry.set_node("0xdeadbeef", node_name="foo.example.com")
-        self.assertEqual(self.registry.nodes['0xdeadbeef']['name'], 'foo.example.com')
-        self.assertIn("VAGOTH_NAME_foo.example.com", self.registry.unique)
-        self.assertNotIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
-
-    def test_change_tags(self):
-        self.registry.set_node("0xdeadbeef", tags={"xyzzy":"xyzzy"})
-        self.assertIn("xyzzy", self.registry.nodes['0xdeadbeef']['tags'])
-
-    def test_change_keys(self):
-        self.registry.set_node("0xdeadbeef", unique_keys=["MASTER"])
-        self.assertIn("MASTER", self.registry.unique)
-        self.assertNotIn("node001_uniquekey", self.registry.unique)
-        node_keys = self.registry.nodes['0xdeadbeef']['unique_keys']
-        self.assertEqual(node_keys, ["MASTER"])
-
-    def test_get_node_by_name(self):
-        node = self.registry.get_node_by_name("node001.example.com")
-        self.assertEqual(node.id, '0xdeadbeef')
-
-    def test_get_node_by_key(self):
-        node = self.registry.get_node_by_key("node001_uniquekey")
-        self.assertEqual(node.id, '0xdeadbeef')
-
-    def test_get_nodes_with_tags_existence(self):
-        nodes = list(self.registry.get_nodes_with_tags({"tag1": None}))
-        self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0].id, '0xdeadbeef')
-
-    def test_get_nodes_with_tags_value(self):
-        nodes = list(self.registry.get_nodes_with_tags({"tag2": "somevalue"}))
-        self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0].id, '0xdeadbeef')
-
-    def test_get_nodes_with_type(self):
-        nodes = list(self.registry.get_nodes_with_type("hv"))
-        self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0].id, '0xdeadbeef')
-
-    def test_set_parent(self):
-        self.registry.set_parent('0xdeadbeef', 'othernode')
-        self.assertEqual(self.registry.nodes['0xdeadbeef']['parent'], 'othernode')
-
-    def test_get_nodes_with_parent(self):
-        self.registry.set_parent('0xdeadbeef', 'othernode')
-        nodes = list(self.registry.get_nodes_with_parent("othernode"))
-        self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes[0].id, '0xdeadbeef')
-
-    def test_list_nodes(self):
-        nodes = self.registry.list_nodes()
-        self.assertEqual(nodes, ['0xdeadbeef'])
-
-    def test_delete_node(self):
-        self.registry.delete_node('0xdeadbeef')
-        self.assertEqual(len(self.registry.nodes.data), 0)
-        self.assertEqual(len(self.registry.unique.data), 0)
-
-    def test_update_metadata(self):
-        # add new keys
-        self.registry.update_metadata("0xdeadbeef", {
-            "one": "two"
-        })
-        self.assertEqual(self.registry.nodes['0xdeadbeef']['metadata']['one'], 'two')
-        # ensure it doesn't overwrite existing keys
-        self.registry.update_metadata("0xdeadbeef", {"three": "four"})
-        self.assertEqual(self.registry.nodes['0xdeadbeef']['metadata']['one'], 'two')
-        # ensure it deletes keys..
-        self.registry.update_metadata("0xdeadbeef", {}, ["one"])
-        self.assertNotIn("one", self.registry.nodes['0xdeadbeef']['metadata'])
-        # ..but not all keys
-        self.assertIn("three", self.registry.nodes['0xdeadbeef']['metadata'])
-
-    def test_blobs(self):
-        mydict = {"mykey": "myvalue"}
-        self.registry.set_blob("0xdeadbeef", "blob_one", "one")
-        self.registry.set_blob("0xdeadbeef", "blob_two", 2)
-        self.registry.set_blob("0xdeadbeef", "blob_dict", mydict)
-        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_one"), "one")
-        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_two"), 2)
-        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_dict"), mydict)
-        self.assertEqual(self.registry.get_blob("0xdeadbeef", "blob_unset"), None)

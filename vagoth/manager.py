@@ -56,9 +56,9 @@ class Manager(object):
         nodedoc = self.registry.get_node(node_id) # can throw exception
         return self._instantiate_node(nodedoc)
 
-    def get_nodes(self):
+    def get_nodes(self, tenant=False, node_type=False, tags=False, parent=False):
         """Return an iterable of all node instances"""
-        for nodedoc in self.registry.get_nodes():
+        for nodedoc in self.registry.get_nodes(tenant=tenant, node_type=node_type, tags=tags, parent=parent):
             yield self._instantiate_node(nodedoc)
 
     def get_node_by_name(self, node_name):
@@ -70,26 +70,6 @@ class Manager(object):
         """Return the node instance which has the given unique key"""
         nodedoc = self.registry.get_node_by_key(node_key)
         return self._instantiate_node(nodedoc)
-
-    def get_nodes_with_type(self, node_type):
-        """Return an iterable of all node instances with the given type"""
-        for nodedoc in self.registry.get_nodes_with_type(node_type):
-            yield self._instantiate_node(nodedoc)
-
-    def get_nodes_with_tags(self, tag_matches):
-        """
-        Return an iterable of all nodes with matching tags
-        """
-        if tagdict:
-            for nodedoc in self.registry.get_nodes_with_tags(tag_matches):
-                yield self._instantiate_node(nodedoc)
-
-    def get_nodes_with_parent(self, node_parent):
-        """Return an iterable of all nodes with the given parent node"""
-        if hasattr(node_parent, "node_id"):
-            node_parent = node_parent.node_id
-        for nodedoc in self.registry.get_nodes_with_parent(node_parent):
-            yield self._instantiate_node(nodedoc)
 
     def list_nodes(self):
         """Return an iterable of all the node_id in the registry"""

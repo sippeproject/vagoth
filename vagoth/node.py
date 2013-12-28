@@ -17,6 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
+import utils
+
 class Node(object):
     """
     A Node represents a node entry in the Registry.
@@ -96,6 +98,10 @@ class Node(object):
         return self._doc.tags
 
     @property
+    def tenant(self):
+        return self._doc.tenant
+
+    @property
     def unique_keys(self):
         """List of all unique keys for this node"""
         return list(self._doc.unique_keys)
@@ -121,11 +127,4 @@ class Node(object):
         For each key/value pair, check if the tag exists, and if the value is
         not None, if the value matches.
         """
-        assert tag_matches # shouldn't be empty
-        tags = self.tags
-        for tag_name, tag_value in tag_matches.items():
-            if tag_name not in tags:
-                return False
-            if tag_value is not None and tag_value != tags[tag_name]:
-                return False
-        return True
+        return utils.matches_tags(tag_matches, self._doc.tags or {})

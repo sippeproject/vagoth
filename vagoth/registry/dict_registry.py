@@ -28,6 +28,7 @@ A different lock can passed in as an extra argument.
 """
 
 from .. import exceptions
+from .. import utils
 from nodedoc import NodeDoc
 from threading import RLock
 
@@ -35,7 +36,6 @@ class DictRegistry(object):
     """
     A simple thread-safe (but not process-safe) registry.
 
-    self.vms is set to the VM dictionary.
     self.nodes is set to the nodes dictionary.
 
     Example node dict::
@@ -82,7 +82,7 @@ class DictRegistry(object):
             raise exceptions.NodeNotFoundException("Node %s not found in registry" % (node_id,))
 
     def get_node(self, node_id):
-        return NodeDoc(self._get_node(node_id))
+        return NodeDoc(self, self._get_node(node_id))
 
     def get_node_by_name(self, node_name):
         """Return a node doc for the node with the given node_name"""
@@ -90,18 +90,29 @@ class DictRegistry(object):
         for node in self.nodes.itervalues():
             if node.get('name', None) == node_name:
                 return NodeDoc(self, node)
+        raise exceptions.NodeNotFoundException("Node not found in registry with name: %s" % (node_name,))
 
     def get_node_by_key(self, key=None):
         """Return a node doc for the node with the given key"""
         self._load()
-        for node in self.nodes.itervalues():
-            if key in node.get('unique_keys', []):
-                return NodeDoc(self, node)
+        node_id = self.unique.get(key, None)
+        if node_id:
+            return self.get_node(node_id)
+        raise exceptions.NodeNotFoundException("Node not found in registry with key: %s" % (key,))
 
-    def get_nodes(self):
+    def get_nodes(self, tenant=False, node_type=None, tags=None, parent=False):
         """Return an iterable of node docs"""
         self._load()
-        return map(NodeDoc, self.nodes.values())
+        for node in self.nodes.values():
+            if tenant is not False and node["tenant"] != tenant:
+                continue
+            if node_type and node["type"] != node_type:
+                continue
+            if parent is not False and not node["parent"] == parent:
+                continue
+            if tags and not utils.matches_tags(tags, node["tags"]):
+                continue
+            yield NodeDoc(self, node)
 
     def get_nodes_with_type(self, node_type=None):
         """Return an iterable of node docs with the given type"""
@@ -159,7 +170,7 @@ class DictRegistry(object):
                 raise exceptions.NodeAlreadyHasParentException("Node already has a parent. Unassign it first: %s" % (node_id,))
             self._save()
 
-    def add_node(self, node_id, node_name, node_type, definition, metadata=None, tags=None, unique_keys=None):
+    def add_node(self, node_id, node_name, node_type, tenant, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Add a new node to the registry, ensuring that the node_id,
         node_name, and keys are unique.
@@ -171,6 +182,7 @@ class DictRegistry(object):
             node = {
                 "node_id": node_id,
                 "name": node_name,
+                "tenant": tenant,
                 "type": node_type,
                 "definition": definition or {},
                 "metadata": metadata or {},
@@ -190,7 +202,7 @@ class DictRegistry(object):
             self.nodes[node_id] = node
             self._save()
 
-    def set_node(self, node_id, node_name=None, definition=None, metadata=None, tags=None, unique_keys=None):
+    def set_node(self, node_id, node_name=None, tenant=None, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Update the node specified by node_id, ensuring that all uniqueness constraints are
         still valid. No changes will be made if there is the chance of a name or unique key
@@ -210,6 +222,8 @@ class DictRegistry(object):
                 for key in unique_keys:
                     if key in self.unique and self.unique[key] != node_id:
                         raise exceptions.UniqueConstraintViolation("Unique key is already taken: %s" % (key,))
+            if tenant:
+                node["tenant"] = tenant
             if definition:
                 node["definition"] = definition
             if metadata:

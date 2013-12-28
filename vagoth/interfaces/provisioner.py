@@ -45,7 +45,7 @@ class IProvisioner(object):
     """
     def __init__(manager, config):
         """Takes the manager, local config dict and the global config object"""
-    def provision(node_id, node_name=None, node_type=None, definition=None, metadata=None, tags=None, unique_keys=None):
+    def provision(node_id, node_name=None, node_type=None, tenant=None, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Do all required steps to provision the given node in Vagoth, including adding to the registry.
         Throw a ProvisioningException if there were any issues.

@@ -24,9 +24,10 @@
 import zope.interface as ZI
 
 class INodeDoc(ZI.Interface):
-    type = ZI.Attribute("node type")
-    id = ZI.Attribute("node id")
-    name = ZI.Attribute("node name")
+    type = ZI.Attribute("node type as string")
+    id = ZI.Attribute("node id as string")
+    name = ZI.Attribute("node name as string")
+    tenant = ZI.Attribute("node tenant as string")
     definition = ZI.Attribute("node definition as dict")
     metadata = ZI.Attribute("node metadata as dict")
     parent = ZI.Attribute("node parent")

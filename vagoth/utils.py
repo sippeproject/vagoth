@@ -1,4 +1,3 @@
-#
 # Vagoth Cluster Management Framework
 # Copyright (C) 2013  Robert Thomson
 #
@@ -17,27 +16,30 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-"""
-Test vagoth.registry.couch_registry.CouchRegistry
-"""
+#
+# Some utility functions
+#
 
-import unittest
-from ..registry.dict_registry import DictRegistry
-import uuid
-import couchdb
-from .. import exceptions
-from registry_mixin import RegistryMixin
+def matches_tags(tag_matches, tags):
+    """Do the given tag_matches match the given tags?
 
-NO_DEFAULT=uuid.uuid4()
+    If the tag_matches value is None, it only checks for tag existence.
 
-class testDictRegistry(unittest.TestCase, RegistryMixin):
-    def setUp(self):
-        self.registry = DictRegistry(None, {})
-        self.mixin_setUp()
+    If the tag_matches value is not None, it does a direct comparison.
+    For each key/value pair, check if the tag exists, and if the value is
+    not None, if the value matches.
 
-    def test_dict_initial_object(self):
-        self.assertEqual(len(self.registry.nodes), 1)
-        self.assertTrue("0xdeadbeef" in self.registry.nodes)
-        self.assertEqual(len(self.registry.unique), 2)
-        self.assertIn("VAGOTH_NAME_node001.example.com", self.registry.unique)
-        self.assertIn("node001_uniquekey", self.registry.unique)
+    :param tag_matches: key-value pairs we want to check for
+    :param tags: key-value pairs that we'll check against
+    :returns: bool
+    """
+    assert tag_matches
+    assert type(tags) == dict
+
+    for tag_name, tag_value in tag_matches.items():
+        if tag_name not in tags:
+            return False
+        if tag_value is not None and tag_value != tags[tag_name]:
+            return False
+    return True
+

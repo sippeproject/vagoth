@@ -102,7 +102,7 @@ class Monitor(object):
                     vm.state = vm_state
                     logging.debug("Setting VM state for {0} to {1}".format(vm_name, vm_state))
 
-        for vm in self.manager.get_nodes_with_parent(node.node_id):
+        for vm in self.manager.get_nodes(parent=node.node_id):
             # any VMs assigned to node, but not active?
             if vm.node_id not in vms:
                 logging.debug("Unassigning VM {0} from {1}".format(vm.node_id, node.node_id))
@@ -113,7 +113,7 @@ class Monitor(object):
         Poll each node individually (by calling driver.status(node)) and
         call self.update_node with the returned status.
         """
-        for node in self.manager.get_nodes_with_type("hv"):
+        for node in self.manager.get_nodes(node_type="hv"):
             driver = node.driver
             if driver:
                 try:

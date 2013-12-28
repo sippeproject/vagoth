@@ -101,7 +101,7 @@ def cmd_list(args):
         $ vagoth list --uniquekey ip_192.168.1.1
     """
     global manager
-    node_dict = dict([(node.node_id, node) for node in manager.get_nodes()])
+    node_dict = dict([(node.node_id, node) for node in manager.get_nodes(tenant=args.tenant)])
     for node in sorted(node_dict.values()):
         if args.name_glob:
             glob = args.name_glob
@@ -134,6 +134,7 @@ def cmd_list(args):
             assignment, nicetags))
 p_list = make_subcommand("list", "List all VMs", cmd_list)
 p_list.add_argument("name_glob", type=str, help="Name glob/prefix", default=None, nargs='?')
+p_list.add_argument("--tenant", type=str, default=False, help="Limit to the specified tenant")
 p_list.add_argument("--tags", "-t", type=str, nargs="*", help="Limit by tag (key=value, or just key)", default=None)
 p_list.add_argument("--type", "-T", type=str, help="Limit by type", default=None)
 p_list.add_argument("--uniquekey", "-k", type=str, help="Limit by unique key", default=None)
@@ -170,21 +171,6 @@ def cmd_tree(args):
         for node in orphans:
             print_node_and_children(node, {}, 1)
 p_tree = make_subcommand("tree", "List all VMs as a tree", cmd_tree)
-
-def cmd_listvm(args):
-    global manager
-    for node in sorted(manager.get_nodes_with_type("vm")):
-      parent = node.parent
-      assignment = parent and parent.name or ""
-      print("{0:<15}  state={1:<10}  parent={2:<12}  tags={3}".format(
-        node.name, node.state, assignment, ",".join(node.tags)))
-p_listvm = make_subcommand("listvm", "List all VMs (type=vm)", cmd_listvm)
-
-def cmd_listhv(args):
-    global manager
-    for node in manager.get_nodes_with_type('hv'):
-        print("{0} [{1}]".format(node.name, node.state))
-p_listhv = make_subcommand("listhv", "List all hypervisor nodes (type=hv)", cmd_listhv)
 
 def status(command, node_name, msg):
     print("{0}: {1} ({2})".format(command, msg, node_name))
@@ -323,6 +309,7 @@ def cmd_new(args):
         manager.provisioner.provision(args.node_id,
             node_name=args.name or args.node_id,
             node_type=args.type,
+            tenant=args.tenant,
             definition=definition,
             tags = tags)
         status("new", args.node_id, "OK")
@@ -331,6 +318,7 @@ def cmd_new(args):
 p_new = make_subcommand("new", "Create a new VM in the cluster", cmd_new)
 p_new.add_argument("node_id", type=str, help="Node ID")
 p_new.add_argument("--name", type=str, help="Node name", default=None)
+p_new.add_argument("--tenant", type=str, help="Tenant identifier [None]", default=None)
 p_new.add_argument("--type", type=str, help="Node type [vm]", default="vm")
 p_new.add_argument("--tags", type=str, nargs="*", help="key=value format node tags", default=None)
 p_new.add_argument("kwarg", nargs="*", help="key=value arguments")

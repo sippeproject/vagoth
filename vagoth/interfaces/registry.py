@@ -56,9 +56,10 @@ class IRegistry(object):
         :returns: INodeDoc
         """
 
-    def get_nodes():
+    def get_nodes(tenant=None, node_type=None, tags=None, parent=None):
         """
-        Returns all nodes
+        Returns all nodes which match the supplied filters.
+
         :returns: Iterable of INodeDoc's
         """
 
@@ -92,14 +93,23 @@ class IRegistry(object):
         If a parent is already assigned, this will throw an exception.
         """
 
-    def add_node(node_id, node_name, node_type, definition, metadata=None, tags=None, unique_keys=None):
+    def add_node(node_id, node_name, node_type, tenant, definition=None, metadata=None, tags=None, unique_keys=None):
         """
         Add a node to the registry
         """
 
-    def set_node(node_id, node_name, definition=None, metadata=None, tags=None, unique_keys=None):
+    def set_node(node_id, node_name=None, tenant=None, definition=None, metadata=None, tags=None, unique_keys=None):
         """
-        Change attributes of an existing node in the registry
+        Change attributes of an existing node in the registry.
+        All parameters except node_id are optional.
+
+        :param node_id: unique ID of the node
+        :param node_name: unique name of the node
+        :param tenant: name/identifier of the tenant (owner/project)
+        :param definition: definition dictionary
+        :param metadata: metadata dictionary
+        :param tags: tags dictionary
+        :param unique_keys: list of unique keys to claim
         """
 
     def update_metadata(node_id, extra_metadata, delete_keys=None):
@@ -114,6 +124,10 @@ class IRegistry(object):
         Metadata, unlike definition, tags, and keys, is likely to be changed
         regularly by multiple processes, and it therefore justifies an extra
         method.
+
+        :param node_id: unique ID of the node
+        :param extra_metadata: dict of metadata to add to existing metadata dict
+        :param delete_keys: list of metadata keys to delete
         """
 
     def set_blob(node_id, key, value):

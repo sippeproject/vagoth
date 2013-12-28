@@ -34,6 +34,8 @@ class NodeDoc(object):
         assert "parent" in node_dict
         assert "definition" in node_dict
         assert "unique_keys" in node_dict
+        if "tenant" not in node_dict:
+            node_dict["tenant"] = None
         if "metadata" not in node_dict:
             node_dict["metadata"] = {}
         if "tags" not in node_dict:
@@ -72,6 +74,10 @@ class NodeDoc(object):
     @property
     def unique_keys(self):
         return self.node_dict["unique_keys"]
+
+    @property
+    def tenant(self):
+        return self.node_dict["tenant"]
 
     def get_blob(self, key):
         return self.registry.get_blob(self.id, key)

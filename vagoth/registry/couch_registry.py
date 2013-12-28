@@ -23,6 +23,7 @@
 
 import couchdb
 from .. import exceptions
+from .. import utils
 from nodedoc import NodeDoc
 
 class CouchRegistry(object):
@@ -36,6 +37,7 @@ class CouchRegistry(object):
             "node_id": "node001",
             "type": "type of node",
             "name": "nice node name",
+            "tenant": "tenant identifier",
             "definition": { ... node definition ... },
             "metadata": { ... node metadata ... },
             "unique_keys": [ "one", "two", "three" ],
@@ -51,9 +53,18 @@ class CouchRegistry(object):
     def list_nodes(self):
         return list(self.nodes)
 
-    def get_nodes(self):
+    def get_nodes(self, tenant=False, node_type=False, tags=False, parent=False):
         for node_id in self.nodes:
-            yield NodeDoc(self, self.nodes[node_id])
+            node = self.nodes[node_id]
+            if tenant is not False and node.get("tenant", None) != tenant:
+                continue
+            if parent is not False and not node["parent"] == parent:
+                continue
+            if node_type and node["type"] != node_type:
+                continue
+            if tags and not utils.matches_tags(tags, node["tags"]):
+                continue
+            yield NodeDoc(self, node)
 
     def __contains__(self, node_id):
         return node_id in self.nodes
@@ -83,11 +94,7 @@ class CouchRegistry(object):
 
     def get_nodes_with_type(self, node_type=None):
         "return list of nodes with type"
-        # FIXME: inefficient
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
-            if node['type'] == node_type:
-                yield NodeDoc(self, node)
+        return self.get_nodes(node_type=node_type)
 
     def get_nodes_with_tags(self, tag_matches):
         """return nodes with matching tags
@@ -96,26 +103,11 @@ class CouchRegistry(object):
             check for key existence only.
         :returns: iterable of node dict's
         """
-        # FIXME: inefficient
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
-            tags = node.get('tags', {})
-            if type(tags) == list: # if it's a list, convert it to a dict
-                tags = dict([(x,True) for x in tags])
-            for tag_name, tag_value in tag_matches.items():
-                if tag_name not in tags:
-                    continue
-                if tag_value is not None and tag_value != tags[tag_name]:
-                    continue
-                yield NodeDoc(self, node)
+        return self.get_nodes(tags=tag_matches)
 
     def get_nodes_with_parent(self, parent=None):
         "return list of nodes with given parent"
-        # FIXME: inefficient
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
-            if node.get('parent', None) == parent:
-                yield NodeDoc(self, node)
+        return self.get_nodes(parent=parent)
 
     def set_parent(self, node_id, parent_node_id):
         """Set parent_node_id atomically, and don't overwrite another"""
@@ -175,7 +167,7 @@ class CouchRegistry(object):
         # processes)
         #
 
-    def add_node(self, node_id, node_name, node_type, definition, metadata=None, unique_keys=None, tags=None):
+    def add_node(self, node_id, node_name, node_type, tenant=None, definition=None, metadata=None, unique_keys=None, tags=None):
         """
         Create new node in registry
         """
@@ -193,6 +185,7 @@ class CouchRegistry(object):
                 "unique_keys": [],
                 "tags": [],
                 "parent": None,
+                "tenant": tenant,
             }
         except couchdb.http.ResourceConflict:
             raise exceptions.NodeAlreadyExistsException("Node {0} already exists in registry".format(node_id))
@@ -229,7 +222,7 @@ class CouchRegistry(object):
                 doc['_rev'] = newdoc['_rev']
         raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
 
-    def set_node(self, node_id, node_name=None, definition=None, metadata=None, unique_keys=None, tags=None, **blobs):
+    def set_node(self, node_id, node_name=None, tenant=None, definition=None, metadata=None, unique_keys=None, tags=None, **blobs):
         """Change an existing node definition"""
         try:
             doc = self.nodes[node_id]
@@ -243,6 +236,8 @@ class CouchRegistry(object):
             doc['metadata'] = metadata
         if tags:
             doc['tags'] = tags
+        if tenant:
+            doc['tenant'] = tenant
         # update name (remember to cleanup old_name_key if set,
         #               or new_name_key on failure)
         if node_name and doc['name'] != node_name:
