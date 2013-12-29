@@ -5,6 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name = "vagoth",
     version = "0.9.3",
+    description = "Pluggable cluster controller (eg. for VM management)",
     packages = find_packages(),
     package_data = {
         'vagoth.virt.utils': [ "*.rb", ],
