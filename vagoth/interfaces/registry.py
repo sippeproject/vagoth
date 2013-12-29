@@ -17,7 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IRegistry(object):
+import zope.interface as ZI
+
+class IRegistry(ZI.Interface):
     """
     The registry provides the data store for Vagoth.  It maintains
     nodes, their type, definition, metadata, tags, unique keys,
@@ -49,7 +51,7 @@ class IRegistry(object):
         :returns: INodeDoc
         """
 
-    def get_node_by_key(unique_key=None):
+    def get_node_by_key(unique_key):
         """Return the node with the given unique key
 
         :param unique_key: unique key to search for
@@ -63,21 +65,21 @@ class IRegistry(object):
         :returns: Iterable of INodeDoc's
         """
 
-    def get_nodes_with_type(node_type=None):
+    def get_nodes_with_type(node_type):
         """Return all nodes with a matching type
 
         :param node_type: node type to match
         :returns: Iteratable of INodeDoc's
         """
 
-    def get_nodes_with_tags(tag_matches=None):
+    def get_nodes_with_tags(tag_matches):
         """Returns all nodes which match the given tags
 
         :param tag_matches: dict of key-value pairs that must match
         :returns: Iterable of INodeDoc's
         """
 
-    def get_nodes_with_parent(node_parent=None):
+    def get_nodes_with_parent(node_parent):
         """Returns all node who have the given parent
 
         :param node_parent: parent's node id

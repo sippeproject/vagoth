@@ -17,7 +17,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IProvisioner(object):
+import zope.interface as ZI
+
+class IProvisioner(ZI.Interface):
     """
     The provisioner is called to add a node to the cluster, and to
     remove a node from the cluster.

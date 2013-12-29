@@ -24,6 +24,9 @@
 import zope.interface as ZI
 
 class INodeDoc(ZI.Interface):
+    """
+    INodeDoc represents a node as returned from an IRegistry.
+    """
     type = ZI.Attribute("node type as string")
     id = ZI.Attribute("node id as string")
     name = ZI.Attribute("node name as string")

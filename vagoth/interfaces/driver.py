@@ -17,7 +17,19 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IDriver(object):
+import zope.interface as ZI
+
+class IDriver(ZI.Interface):
+    """
+    Interface required for managing VMs on a single server.
+
+    If you want to use the vagoth.virt.virtualmachine_ and
+    vagoth.virt.hypervisor_ as-is with your hypervisor API,
+    you can implement your own driver using IDriver.
+
+    For example, you could write a driver to manage Xen, VMWare or RHEV VMs,
+    or even to manage VMs in remote clouds.
+    """
     def __init__(manager, config):
         """
         """

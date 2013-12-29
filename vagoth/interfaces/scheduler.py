@@ -17,7 +17,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #
 
-class IScheduler(object):
+import zope.interface as ZI
+
+class IScheduler(ZI.Interface):
+    """
+    Scheduler's are called to schedule the background execution of actions.
+    Vagoth's default schedulers are quite basic, but you can implement your
+    own so long as it matches the IScheduler interface.
+    """
     def __init__(manager, config):
         """
         Instantiated with an instance of Manager and a configuration dict

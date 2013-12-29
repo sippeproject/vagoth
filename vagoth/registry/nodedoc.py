@@ -87,3 +87,9 @@ class NodeDoc(object):
 
     def get(self, *args, **kwargs):
         raise NotImplementedError
+
+    def __str__(self):
+        return "NodeDoc for %s" % (self.id,)
+
+    def __repr__(self):
+        return "<NodeDoc for %s at 0x%x>" % (self.id, id(self))

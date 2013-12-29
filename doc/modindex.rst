@@ -10,6 +10,35 @@ vagoth.config
 .. automodule:: vagoth.config
    :members:
 
+vagoth.interfaces.nodedoc
+-------------------------
+
+.. automodule:: vagoth.interfaces.nodedoc
+   :members:
+
+vagoth.interfaces.registry
+--------------------------
+
+.. automodule:: vagoth.interfaces.registry
+   :members:
+
+vagoth.interfaces.provisioner
+-----------------------------
+
+.. automodule:: vagoth.interfaces.provisioner
+   :members:
+
+vagoth.interfaces.scheduler
+---------------------------
+.. automodule:: vagoth.interfaces.scheduler
+   :members:
+
+vagoth.interfaces.driver
+------------------------
+
+.. automodule:: vagoth.interfaces.driver
+   :members:
+
 vagoth.transaction
 ------------------
 
@@ -34,6 +63,12 @@ vagoth.scheduler.threadscheduler
 .. automodule:: vagoth.scheduler.threadscheduler
    :members:
 
+vagoth.registry.nodedoc
+-----------------------
+
+.. automodule:: vagoth.registry.nodedoc
+   :members:
+
 vagoth.registry.dict_registry
 -----------------------------
 
@@ -41,7 +76,7 @@ vagoth.registry.dict_registry
    :members:
 
 vagoth.registry.pickle_registry
------------------------------
+-------------------------------
 
 .. automodule:: vagoth.registry.pickle_registry
    :members:

@@ -92,7 +92,7 @@ class DictRegistry(object):
                 return NodeDoc(self, node)
         raise exceptions.NodeNotFoundException("Node not found in registry with name: %s" % (node_name,))
 
-    def get_node_by_key(self, key=None):
+    def get_node_by_key(self, key):
         """Return a node doc for the node with the given key"""
         self._load()
         node_id = self.unique.get(key, None)
@@ -114,7 +114,7 @@ class DictRegistry(object):
                 continue
             yield NodeDoc(self, node)
 
-    def get_nodes_with_type(self, node_type=None):
+    def get_nodes_with_type(self, node_type):
         """Return an iterable of node docs with the given type"""
         self._load()
         for node in self.nodes.itervalues():
@@ -140,7 +140,7 @@ class DictRegistry(object):
                     continue
                 yield NodeDoc(self, node)
 
-    def get_nodes_with_parent(self, node_parent=None):
+    def get_nodes_with_parent(self, node_parent):
         """Return an iterable of node docs with the given parent id"""
         self._load()
         for node in self.nodes.itervalues():

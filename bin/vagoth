@@ -40,8 +40,12 @@ ch = logging.StreamHandler()
 logging.getLogger().addHandler(ch)
 logging.getLogger().setLevel(logging.INFO)
 
-def pprint(dictionary):
-    print(json.dumps(dictionary, indent=2))
+def pprint(dictionary, indent=0):
+    dump = json.dumps(dictionary, indent=2)
+    if indent > 0:
+        space = " "*indent
+        dump = space+dump.replace("\n", "\n"+space)
+    print(dump)
 
 manager = None
 
@@ -219,18 +223,19 @@ p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
 def cmd_info(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
-    print("# state:")
-    pprint(vm.state)
-    print("# parent:")
-    pprint(vm.parent and vm.parent.name)
-    print("# definition:")
-    pprint(vm.definition)
-    print("# metadata:")
-    pprint(vm.metadata)
-    print("# tags:")
-    pprint(vm.tags)
-    print("# unique keys:")
-    pprint(vm.unique_keys)
+    print("id = {0}".format(json.dumps(vm.node_id)))
+    print("name = {0}".format(json.dumps(vm.name)))
+    print("tenant = {0}".format(json.dumps(vm.tenant)))
+    parent = vm.parent
+    print("parent = {0}".format(json.dumps(parent and parent.name or None)))
+    print("definition =")
+    pprint(vm.definition, 2)
+    print("metadata =")
+    pprint(vm.metadata, 2)
+    print("tags =")
+    pprint(vm.tags, 2)
+    print("unique keys =")
+    pprint(vm.unique_keys, 2)
 p_info = make_subcommand("info", "Display information about a VM", cmd_info)
 p_info.add_argument("vm_name", type=str, help="Name of VM")
 

@@ -26,30 +26,23 @@ class Node(object):
     Node is an extensible wrapper for an INodeDoc instance, which is
     a read-only snapshot of a node from the registry.
 
-    The following attributes are exposed:
-        node_id - same as node_id passed in
-        name - a string
-        definition - a dict
-        metadata - a dict
-        parent - None, or the node_id of the parent Node
-        tags - dict of string keys matching string value
-        unique_keys - list of strings
-
-    No setter's are provided for the above, as it's expected that you'll
-    inherit this class and provide any methods that you require there.
+    It's expected that specific node types will inherit this Node
+    and add python-API-friendly functionality to it.
     """
     def __init__(self, manager, node_doc):
         """
-        @param manager: vagoth.manager.Manager instance
-        @param node_id: ID of node
-        @param node_doc: must implement INodeDoc
+        :param manager: vagoth.manager.Manager instance
+        :param node_id: ID of node
+        :param node_doc: must implement INodeDoc
         """
         self._manager = manager
         self._node_id = node_doc.id
         self._doc = node_doc
 
     def refresh(self):
-        """Refresh node data using the registry"""
+        """
+        Refresh node data by querying the registry for the latest INodeDoc
+        """
         self._doc = self._manager.registry.get_node(self.node_id)
 
     # ensure it's read-only

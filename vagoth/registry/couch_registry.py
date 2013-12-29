@@ -76,23 +76,23 @@ class CouchRegistry(object):
             return NodeDoc(self, node)
         raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
 
-    def get_node_by_name(self, name):
+    def get_node_by_name(self, node_name):
         "return dict for node"
-        key = "VAGOTH_NAME_"+name
+        key = "VAGOTH_NAME_"+node_name
         if key in self.unique:
             node_id = self.unique[key]['node_id']
             if node_id in self.nodes:
                 return NodeDoc(self, self.nodes[node_id])
-        raise exceptions.NodeNotFoundException("Node with name {0} not found in registry.".format(name))
+        raise exceptions.NodeNotFoundException("Node with name {0} not found in registry.".format(node_name))
 
-    def get_node_by_key(self, key=None):
+    def get_node_by_key(self, unique_key):
         "return the node with given unique key"
-        if key and key in self.unique:
-            node_id = self.unique[key]['node_id']
+        if unique_key and unique_key in self.unique:
+            node_id = self.unique[unique_key]['node_id']
             return NodeDoc(self, self.nodes.get(node_id, None))
-        raise exceptions.NodeNotFoundException("Node with key {0} not found in registry.".format(key))
+        raise exceptions.NodeNotFoundException("Node with key {0} not found in registry.".format(unique_key))
 
-    def get_nodes_with_type(self, node_type=None):
+    def get_nodes_with_type(self, node_type):
         "return list of nodes with type"
         return self.get_nodes(node_type=node_type)
 
