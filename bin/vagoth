@@ -34,6 +34,7 @@ import json
 import getpass
 import logging
 import sys
+import re
 
 # log to standard output
 ch = logging.StreamHandler()
@@ -46,6 +47,43 @@ def pprint(dictionary, indent=0):
         space = " "*indent
         dump = space+dump.replace("\n", "\n"+space)
     print(dump)
+
+#following from Python cookbook, #475186
+def has_colours(stream):
+    if not hasattr(stream, "isatty"):
+        return False
+    if not stream.isatty():
+        return False # auto color only on TTYs
+    try:
+        import curses
+        curses.setupterm()
+        return curses.tigetnum("colors") > 2
+    except:
+        # guess false in case of error
+        return False
+has_colours = has_colours(sys.stdout)
+
+ANSI_MAP = {
+    "BLACK":"\033[1;30m", "RED":"\033[1;31m", "GREEN":"\033[1;32m",
+    "YELLOW":"\033[1;33m", "BLUE":"\033[1;34m", "MAGENTA":"\033[1;35m",
+    "CYAN":"\033[1;36m", "WHITE":"\033[1;37m", "BROWN":"\033[0;33m",
+    "RESET":"\033[0m", "BOLD": "\033[1m",
+}
+ANSI_REGEX = re.compile("%%([A-Z]+?)%%")
+def ansi_repl(match):
+    global ANSI_MAP
+    global ANSI_REGEX
+    col = match.group(1)
+    if col in ANSI_MAP:
+        if has_colours:
+            return ANSI_MAP[col]
+        else:
+            return ""
+    else:
+        return match.group(0)
+def ansi_print(string):
+    print(ANSI_REGEX.sub(ansi_repl, string) + "\033[0m")
+
 
 manager = None
 
@@ -78,6 +116,14 @@ def make_subcommand(command, helptext, function):
     parser.add_argument("-v", "--verbose", action='store_true')
     return parser
 
+def _format_state(status):
+    if status == "running":
+        return "%%GREEN%%running%%RESET%%"
+    elif status == "stopped":
+        return "%%RED%%stopped%%RESET%%"
+    else:
+        return "%%BLACK%%" + status + "%%RESET%%"
+
 def _format_tags(tags):
     """Given a dictionary of user tags, return them formatted for display"""
     assert type(tags) == dict
@@ -90,7 +136,7 @@ def _format_tags(tags):
     return " ".join(out)
 
 def cmd_list(args):
-    """List all VMs managed by Vagoth, with filtering.
+    """List all nodes managed by Vagoth, with filtering.
 
     eg. to list all nodes with a brief summary:
         $ vagoth list
@@ -105,6 +151,8 @@ def cmd_list(args):
         $ vagoth list --uniquekey ip_192.168.1.1
     """
     global manager
+    if args.parent == "":
+        args.parent = None
     node_dict = dict([(node.node_id, node) for node in manager.get_nodes(tenant=args.tenant)])
     for node in sorted(node_dict.values()):
         if args.name_glob:
@@ -128,25 +176,33 @@ def cmd_list(args):
             continue
         if args.state and node.state != args.state:
             continue
+        if args.parent is not False and args.parent != node.parent_id:
+            continue
         parent_id = node.parent_id
         assignment = parent_id and node_dict[parent_id].name or ""
         nicetags = _format_tags(node.tags)
         if nicetags:
-            nicetags = "  tags=("+nicetags+")"
-        print("{0:<15}  state={1:<10}  type={2:<2}  parent={3:<12}{4}".format(
-            node.name, node.state, node.node_type,
+            nicetags = " tags=("+nicetags+")"
+        ansi_print("{0:<17} type={2} state={1:<10} tenant={3} parent={4}{5}".format(
+            node.name, _format_state(node.state), node.node_type, node.tenant or '',
             assignment, nicetags))
-p_list = make_subcommand("list", "List all VMs", cmd_list)
+p_list = make_subcommand("list", "List all nodes managed by Vagoth, with optional filtering", cmd_list)
 p_list.add_argument("name_glob", type=str, help="Name glob/prefix", default=None, nargs='?')
 p_list.add_argument("--tenant", type=str, default=False, help="Limit to the specified tenant")
 p_list.add_argument("--tags", "-t", type=str, nargs="*", help="Limit by tag (key=value, or just key)", default=None)
 p_list.add_argument("--type", "-T", type=str, help="Limit by type", default=None)
 p_list.add_argument("--uniquekey", "-k", type=str, help="Limit by unique key", default=None)
 p_list.add_argument("--state", "-s", type=str, help="Limit by node state", default=None)
+p_list.add_argument("--parent", "-p", type=str, help="Limit by parent", default=False)
 
 def print_node_and_children(node, parents, indent=0):
     global manager
-    print("  "*indent+"{0} [{1}] type={2}".format(node.name, node.state, node.node_type))
+    tags = _format_tags(node.tags)
+    ansi_print("  "*indent+"{0:<16} state={1:<10} type={2} tags={3}".format(
+        node.name,
+        _format_state(node.state),
+        node.node_type,
+        tags))
     children = parents.get(node.node_id, [])
     for child in children:
         print_node_and_children(child, parents, indent+1)
@@ -223,18 +279,18 @@ p_shutdown.add_argument("vm_name", type=str, help="Name of VM")
 def cmd_info(args):
     global manager
     vm = manager.get_node_by_name(args.vm_name)
-    print("id = {0}".format(json.dumps(vm.node_id)))
-    print("name = {0}".format(json.dumps(vm.name)))
-    print("tenant = {0}".format(json.dumps(vm.tenant)))
+    ansi_print("%%BOLD%%id%%RESET%% = {0}".format(json.dumps(vm.node_id)))
+    ansi_print("%%BOLD%%name%%RESET%% = {0}".format(json.dumps(vm.name)))
+    ansi_print("%%BOLD%%tenant%%RESET%% = {0}".format(json.dumps(vm.tenant)))
     parent = vm.parent
-    print("parent = {0}".format(json.dumps(parent and parent.name or None)))
-    print("definition =")
+    ansi_print("%%BOLD%%parent%%RESET%% = {0}".format(json.dumps(parent and parent.name or None)))
+    ansi_print("%%BOLD%%definition%%RESET%% =")
     pprint(vm.definition, 2)
-    print("metadata =")
+    ansi_print("%%BOLD%%metadata%%RESET%% =")
     pprint(vm.metadata, 2)
-    print("tags =")
+    ansi_print("%%BOLD%%tags%%RESET%% =")
     pprint(vm.tags, 2)
-    print("unique keys =")
+    ansi_print("%%BOLD%%unique keys%%RESET%% =")
     pprint(vm.unique_keys, 2)
 p_info = make_subcommand("info", "Display information about a VM", cmd_info)
 p_info.add_argument("vm_name", type=str, help="Name of VM")
