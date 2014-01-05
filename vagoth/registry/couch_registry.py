@@ -54,8 +54,8 @@ class CouchRegistry(object):
         return list(self.nodes)
 
     def get_nodes(self, tenant=False, node_type=False, tags=False, parent=False):
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
+        for row in self.nodes.view('_all_docs', include_docs=True):
+            node = row.doc
             if tenant is not False and node.get("tenant", None) != tenant:
                 continue
             if parent is not False and not node["parent"] == parent:
@@ -131,7 +131,7 @@ class CouchRegistry(object):
         """
         assert node_id is not None
         claimed_keys = []
-        for key in new_keys:
+        for key in sorted(new_keys):
             doc = self.unique.get(key, None)
             if doc:
                 if doc['node_id'] == node_id:
@@ -142,8 +142,10 @@ class CouchRegistry(object):
                 self.unique[key] = { "node_id": node_id }
                 claimed_keys.append(key)
             except couchdb.http.ResourceConflict:
+                # someone claimed it ahead of us, I guess.. back out..
                 for delkey in claimed_keys:
                     del self.unique[delkey]
+                raise exceptions.UniqueConstraintViolation("Key {0} is not unique.".format(key))
         if old_keys:
             for old_key in old_keys:
                 if old_key in new_keys:
