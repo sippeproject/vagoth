@@ -224,7 +224,7 @@ class CouchRegistry(object):
                 doc['_rev'] = newdoc['_rev']
         raise exceptions.RegistryException("Could not write node %s to DB" % (doc['_id']))
 
-    def set_node(self, node_id, node_name=None, tenant=None, definition=None, metadata=None, unique_keys=None, tags=None, **blobs):
+    def set_node(self, node_id, node_name=False, tenant=False, definition=False, metadata=False, unique_keys=False, tags=False):
         """Change an existing node definition"""
         try:
             doc = self.nodes[node_id]
@@ -232,22 +232,23 @@ class CouchRegistry(object):
             raise exceptions.NodeNotFoundException("Node {0} not found in registry.".format(node_id))
         new_name_key = None
         old_name_key = None
-        if definition:
+        if definition is not False:
             doc['definition'] = definition
-        if metadata:
+        if metadata is not False:
             doc['metadata'] = metadata
-        if tags:
+        if tags is not False:
             doc['tags'] = tags
-        if tenant:
+        if tenant is not False:
             doc['tenant'] = tenant
         # update name (remember to cleanup old_name_key if set,
         #               or new_name_key on failure)
         if node_name and doc['name'] != node_name:
+            assert isinstance(node_name, basestring)
             new_name_key = 'VAGOTH_NAME_'+node_name
             self._claim_unique_keys(node_id, [new_name_key])
             old_name_key = 'VAGOTH_NAME_'+doc['name']
             doc['name'] = node_name
-        if unique_keys:
+        if unique_keys is not False:
             try:
                 self._claim_unique_keys(node_id, unique_keys, doc['unique_keys'])
                 doc['unique_keys'] = unique_keys
@@ -255,16 +256,6 @@ class CouchRegistry(object):
                 if new_name_key:
                     self._claim_unique_keys(node_id, [], [new_name_key])
                 raise
-        if blobs:
-            if "blobs" not in doc:
-                doc["blobs"] = {}
-            for k,v in blobs.items():
-                if v is None:
-                    if k in doc["blobs"]:
-                        del doc["blobs"][k]
-                else:
-                    doc["blobs"][k] = v
-            doc["blobs"] = blobs
         self._force_node_save(doc)
         if old_name_key:
             del self.unique[old_name_key]

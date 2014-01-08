@@ -376,7 +376,7 @@ def cmd_new(args):
         status("new", args.node_id, "OK")
     except ProvisioningException as e:
         fail("new", args.node_id, e.message)
-p_new = make_subcommand("new", "Create a new VM in the cluster", cmd_new)
+p_new = make_subcommand("new", "Create a new node in the cluster", cmd_new)
 p_new.add_argument("node_id", type=str, help="Node ID")
 p_new.add_argument("--name", type=str, help="Node name", default=None)
 p_new.add_argument("--tenant", type=str, help="Tenant identifier [None]", default=None)
@@ -384,6 +384,34 @@ p_new.add_argument("--type", type=str, help="Node type [vm]", default="vm")
 p_new.add_argument("--tags", type=str, nargs="*", help="key=value format node tags", default=None)
 p_new.add_argument("kwarg", nargs="*", help="key=value arguments")
 
+def cmd_set(args):
+    """
+    Call the registry directly to update some node attributes.
+    """
+    global manager
+    node = manager.get_node_by_name(args.node_name)
+    tags = False
+    if args.tags:
+        tags = node.tags.copy()
+        for tag in args.tags:
+            if "=" in tag:
+                k,v = tag.split("=", 1)
+                if v == "":
+                    if k in tags:
+                        del tags[k]
+                else:
+                    tags[k] = v
+            else:
+                tags[tag] = True
+    manager.registry.set_node(node.node_id, node_name=args.name, tenant=args.tenant, tags=tags)
+    if args.state:
+        node.state = args.state
+p_set = make_subcommand("set", "Update properties of a node", cmd_set)
+p_set.add_argument("node_name", type=str, help="Node Name")
+p_set.add_argument("--name", type=str, help="Node name", default=False)
+p_set.add_argument("--tenant", type=str, help="Tenant identifier [None]", default=False)
+p_set.add_argument("--tags", type=str, nargs="*", help="key=value format node tags, or key= to delete", default=None)
+p_set.add_argument("--state", type=str, default=None)
 
 def cmd_delete(args):
     global manager
